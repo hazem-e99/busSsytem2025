@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Test</title>
+</head>
+<body>
+    <h1>Token Test Page</h1>
+    <div id="output"></div>
+    
+    <script>
+        // Test localStorage token
+        function testToken() {
+            const output = document.getElementById('output');
+            output.innerHTML = '<h2>LocalStorage Contents:</h2>';
+            
+            // Check all localStorage items
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                output.innerHTML += `<p><strong>${key}:</strong> ${value}</p>`;
+            }
+            
+            // Look for token specifically
+            const user = localStorage.getItem('user');
+            if (user) {
+                try {
+                    const userData = JSON.parse(user);
+                    output.innerHTML += `<h3>User Data:</h3>`;
+                    output.innerHTML += `<pre>${JSON.stringify(userData, null, 2)}</pre>`;
+                    
+                    if (userData.token) {
+                        output.innerHTML += `<h3>Token Found:</h3>`;
+                        output.innerHTML += `<p><strong>Token:</strong> ${userData.token}</p>`;
+                        
+                        // Test API with token
+                        testAPI(userData.token);
+                    } else {
+                        output.innerHTML += `<p style="color: red;">No token found in user data</p>`;
+                    }
+                } catch (e) {
+                    output.innerHTML += `<p style="color: red;">Error parsing user data: ${e.message}</p>`;
+                }
+            } else {
+                output.innerHTML += `<p style="color: red;">No 'user' key found in localStorage</p>`;
+            }
+        }
+        
+        async function testAPI(token) {
+            const output = document.getElementById('output');
+            output.innerHTML += `<h3>Testing API with Token:</h3>`;
+            
+            try {
+                const response = await fetch('http://72.60.35.47/api/Payment', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    output.innerHTML += `<p style="color: green;">✅ API Success!</p>`;
+                    output.innerHTML += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    output.innerHTML += `<p style="color: red;">❌ API Error: ${response.status} ${response.statusText}</p>`;
+                }
+            } catch (error) {
+                output.innerHTML += `<p style="color: red;">❌ Network Error: ${error.message}</p>`;
+            }
+        }
+        
+        // Run test when page loads
+        window.onload = testToken;
+    </script>
+</body>
+</html>
