@@ -45,8 +45,8 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'S
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3">
-        <div className="relative w-full max-w-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
             placeholder={searchPlaceholder}
@@ -58,7 +58,8 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'S
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden">
-        <Table>
+        <div className="w-full overflow-x-auto">
+        <Table className="min-w-[700px] sm:min-w-0">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -103,9 +104,10 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'S
             )}
           </TableBody>
         </Table>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-0 sm:justify-between">
         <div className="text-sm text-text-muted">
           Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
         </div>

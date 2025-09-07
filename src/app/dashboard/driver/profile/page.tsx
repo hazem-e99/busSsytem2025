@@ -345,11 +345,11 @@ export default function DriverProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Modern Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-blue-500 to-indigo-600">
@@ -377,7 +377,7 @@ export default function DriverProfile() {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -388,7 +388,7 @@ export default function DriverProfile() {
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingImage}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg w-full sm:w-auto"
               >
                 {isUploadingImage ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -399,7 +399,7 @@ export default function DriverProfile() {
               </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
-                className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-lg"
+                className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 {isEditing ? 'Cancel Edit' : 'Edit Profile'}

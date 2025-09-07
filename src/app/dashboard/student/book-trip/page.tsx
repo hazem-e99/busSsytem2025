@@ -357,18 +357,18 @@ export default function BookTripPage() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-4 sm:p-6">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Hero Section */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-green-50 via-white to-blue-50 p-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-green-50 via-white to-blue-50 p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-text-primary tracking-tight">Book Your Trip</h1>
             <p className="text-text-secondary mt-1">Find and book available bus trips</p>
           </div>
-          <div className="w-64">
+          <div className="w-full sm:w-64">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input 
@@ -380,7 +380,7 @@ export default function BookTripPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Bus className="w-5 h-5 text-green-600" />
             <div>
@@ -408,12 +408,12 @@ export default function BookTripPage() {
       {/* Advanced Filters */}
       <Card className="rounded-xl border bg-white">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
               <CardTitle>Advanced Filters</CardTitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {hasActiveFilters && (
                 <Button
                   variant="outline"
@@ -437,7 +437,7 @@ export default function BookTripPage() {
         </CardHeader>
         {showFilters && (
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Status Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -501,7 +501,8 @@ export default function BookTripPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-[820px] sm:min-w-0">
             <TableHeader>
               <TableRow>
                 <TableHead>Bus & Route</TableHead>
@@ -575,7 +576,7 @@ export default function BookTripPage() {
                       {getStatusBadge(trip.status as TripStatus)}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -617,6 +618,7 @@ export default function BookTripPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -630,7 +632,7 @@ export default function BookTripPage() {
         {selectedTrip && (
           <div className="space-y-6">
             {/* Trip Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg">Trip Information</h3>
                 <div className="space-y-2">

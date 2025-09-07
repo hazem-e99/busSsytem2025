@@ -227,7 +227,7 @@ export default function SupervisorMyTripsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Shield className="w-7 h-7 text-primary" /> 
@@ -235,14 +235,14 @@ export default function SupervisorMyTripsPage() {
           </h1>
           <p className="text-[#424242]">Track and manage your assigned trips as supervisor</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="text-primary border-primary">
             {trips.length} Total Trips
           </Badge>
           <Button 
             variant="outline" 
             onClick={loadMyTrips}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -251,7 +251,7 @@ export default function SupervisorMyTripsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Trips */}
         <Card className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center justify-between">
@@ -314,7 +314,7 @@ export default function SupervisorMyTripsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-[#757575]" />
@@ -565,7 +565,7 @@ export default function SupervisorMyTripsPage() {
               ) : (
                 <>
                   {/* Status and Route */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Status Card */}
                     <Card className="p-3 bg-white border-[#E0E0E0]">
                       <div className="flex items-center gap-2 mb-2">
@@ -618,7 +618,7 @@ export default function SupervisorMyTripsPage() {
                       </div>
                       <h3 className="text-base font-semibold text-[#212121]">Schedule & Timing</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
                         <Calendar className="w-5 h-5 text-blue-500 mx-auto mb-1" />
                         <p className="text-xs text-[#757575] mb-1">Trip Date</p>
@@ -687,7 +687,7 @@ export default function SupervisorMyTripsPage() {
                       </div>
                       <h3 className="text-base font-semibold text-[#212121]">Staff Information</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                         <div className="p-1.5 bg-blue-50 rounded-full">
                           <User className="w-3 h-3 text-blue-500" />

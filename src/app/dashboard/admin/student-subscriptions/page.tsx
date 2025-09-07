@@ -354,15 +354,15 @@ export default function StudentSubscriptionsPage() {
   if (loading) return <div className="p-6">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 space-y-6">
       {/* Creative Hero */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-text-primary tracking-tight">Student Subscriptions Management</h1>
             <p className="text-text-secondary mt-1">Manage student subscription payments and review payment status</p>
           </div>
-          <div className="w-64">
+          <div className="w-full sm:w-64">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input 
@@ -374,7 +374,7 @@ export default function StudentSubscriptionsPage() {
             </div>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Users className="w-5 h-5 text-blue-600" />
             <div>
@@ -409,12 +409,12 @@ export default function StudentSubscriptionsPage() {
       {/* Advanced Filters */}
       <Card className="rounded-xl border bg-white">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
               <CardTitle>Advanced Filters</CardTitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               {hasActiveFilters && (
                 <Button
                   variant="outline"
@@ -438,7 +438,7 @@ export default function StudentSubscriptionsPage() {
         </CardHeader>
         {showFilters && (
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Status Filter */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Status</label>
@@ -553,7 +553,8 @@ export default function StudentSubscriptionsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-[900px] sm:min-w-0">
             <TableHeader>
               <TableRow>
                 <TableHead>Student</TableHead>
@@ -637,7 +638,7 @@ export default function StudentSubscriptionsPage() {
                     </TableCell>
                     <TableCell>
                       {row.paymentId && row.status === 'Pending' && (
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                           <Button 
                             size="sm" 
                             onClick={() => reviewPayment(row.paymentId!, PaymentStatus.Accepted, 'Payment approved by admin')}
@@ -671,6 +672,7 @@ export default function StudentSubscriptionsPage() {
               )}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
     </div>

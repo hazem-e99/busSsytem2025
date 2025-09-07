@@ -68,7 +68,7 @@ export default function SupervisorNotificationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Users className="w-7 h-7 text-primary" /> 
@@ -76,21 +76,21 @@ export default function SupervisorNotificationsPage() {
           </h1>
           <p className="text-[#424242]">Review and manage notifications, send announcements to students</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <Badge variant="outline" className="text-primary border-primary px-3 py-1">
             {unreadCount} Unread
           </Badge>
           <Button 
             variant="outline" 
             onClick={loadNotifications}
-            className="flex items-center gap-2 px-4 py-2 border-gray-300 hover:bg-gray-50 transition-all duration-300"
+            className="flex items-center gap-2 px-4 py-2 border-gray-300 hover:bg-gray-50 transition-all duration-300 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
           </Button>
           <Button 
             onClick={() => setBroadcastModalOpen(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
           >
             <Send className="w-5 h-5" />
             <div className="text-left">
@@ -101,7 +101,7 @@ export default function SupervisorNotificationsPage() {
           {unreadCount > 0 && (
             <Button 
               onClick={markAllAsRead}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
             >
               <CheckCircle2 className="w-5 h-5" />
               <div className="text-left">

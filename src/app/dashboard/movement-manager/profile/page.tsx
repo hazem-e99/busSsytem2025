@@ -326,11 +326,11 @@ export default function MovementManagerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50 to-cyan-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50 to-cyan-100 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Modern Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-teal-500 to-cyan-600">
@@ -358,7 +358,7 @@ export default function MovementManagerProfilePage() {
               </div>
             </div>
             
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
               <input
                 ref={fileInputRef}
                 type="file"
@@ -369,7 +369,7 @@ export default function MovementManagerProfilePage() {
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingImage}
-                className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg"
+                className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg w-full sm:w-auto"
               >
                 {isUploadingImage ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -380,7 +380,7 @@ export default function MovementManagerProfilePage() {
                   </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
-                className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white shadow-lg"
+                className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 {isEditing ? 'Cancel Edit' : 'Edit Profile'}

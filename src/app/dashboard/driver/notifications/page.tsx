@@ -51,7 +51,7 @@ export default function DriverNotificationsPage() {
   return (
     <div className="space-y-6">
         {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Bus className="w-7 h-7 text-primary" /> 
@@ -59,14 +59,14 @@ export default function DriverNotificationsPage() {
           </h1>
           <p className="text-[#424242]">Stay updated with your trip assignments and system updates</p>
               </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="text-primary border-primary">
             {unreadCount} Unread
           </Badge>
               <Button
                 variant="outline"
             onClick={loadNotifications}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
               >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -74,7 +74,7 @@ export default function DriverNotificationsPage() {
               {unreadCount > 0 && (
                 <Button
               onClick={markAllAsRead}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
                 >
               <CheckCircle2 className="w-4 h-4" />
                   Mark All as Read

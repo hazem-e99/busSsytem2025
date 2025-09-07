@@ -435,7 +435,7 @@ export const Topbar = () => {
 
             {/* Notifications dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 mt-4 w-96 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-50 overflow-hidden">
+              <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[min(24rem,calc(100vw-1.5rem))] sm:w-96 mx-2 sm:mx-0 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-50 overflow-hidden">
                 {/* Header */}
                 <div className="p-6 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80">
                   <div className="flex items-center justify-between">
@@ -476,7 +476,7 @@ export const Topbar = () => {
                 </div>
 
                 {/* List */}
-                <div className="max-h-96 overflow-y-auto">
+                <div className="max-h-[60vh] sm:max-h-96 overflow-y-auto">
                   {displayNotifications.length > 0 ? (
                     displayNotifications.map((notification: Notification) => (
                       <div
@@ -533,24 +533,24 @@ export const Topbar = () => {
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-gray-200/50 bg-gray-50/50 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
+                <div className="p-4 border-t border-gray-200/50 bg-gray-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       onClick={handleMarkAllAsRead}
-                      className="text-xs px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg transition-all duration-300 font-medium"
+                      className="text-xs px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg transition-all duration-300 font-medium w-full sm:w-auto"
                     >
                       Mark all read
                     </button>
                     <button
                       onClick={handleClearAllRead}
-                      className="text-xs px-4 py-2 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-300 font-medium"
+                      className="text-xs px-4 py-2 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-300 font-medium w-full sm:w-auto"
                     >
                       Clear all
                     </button>
                   </div>
                   <a 
                     href={fallbackUrl} 
-                    className="text-xs px-4 py-2 rounded-xl border border-gray-200 hover:bg-white transition-all duration-300 font-medium"
+                    className="text-xs px-4 py-2 rounded-xl border border-gray-200 hover:bg-white transition-all duration-300 font-medium w-full sm:w-auto text-center"
                   >
                     View all
                   </a>

@@ -127,7 +127,7 @@ export default function AdminNotificationsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Shield className="w-7 h-7 text-primary" /> 
@@ -135,7 +135,7 @@ export default function AdminNotificationsPage() {
           </h1>
           <p className="text-[#424242]">Manage all system notifications and broadcast messages</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="text-primary border-primary">
             {unreadCount} Unread
           </Badge>

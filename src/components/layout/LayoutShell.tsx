@@ -40,7 +40,7 @@ export default function LayoutShell({ children }: { children: ReactNode }) {
       <Sidebar userRole={userRole} />
       <div className="lg:ml-72">
         <Topbar />
-        <main className="pt-4 px-8">{children}</main>
+        <main className="pt-4 px-3 sm:px-6">{children}</main>
       </div>
     </div>
   );

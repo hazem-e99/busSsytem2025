@@ -227,7 +227,7 @@ export default function DriverMyTripsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Bus className="w-7 h-7 text-primary" /> 
@@ -235,14 +235,14 @@ export default function DriverMyTripsPage() {
           </h1>
           <p className="text-[#424242]">Track and manage your assigned trips</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="text-primary border-primary">
             {trips.length} Total Trips
           </Badge>
           <Button 
             variant="outline" 
             onClick={loadMyTrips}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -251,7 +251,7 @@ export default function DriverMyTripsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Trips */}
         <Card className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center justify-between">
@@ -314,7 +314,7 @@ export default function DriverMyTripsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-[#757575]" />
@@ -355,7 +355,7 @@ export default function DriverMyTripsPage() {
           </div>
 
           {/* Clear Filters Button */}
-          <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
             <Button
               variant="outline"
               onClick={() => {
@@ -363,7 +363,7 @@ export default function DriverMyTripsPage() {
                 setStatusFilter('all');
                 setDateFilter('');
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 w-full sm:w-auto"
             >
               <Filter className="w-4 h-4" />
               Clear Filters

@@ -205,11 +205,11 @@ export default function TripHistory() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4 sm:p-6">
       <div className="max-w-screen-2xl mx-auto space-y-6">
         {/* Header */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-lg border border-slate-100">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">
                 Trip History
@@ -219,11 +219,11 @@ export default function TripHistory() {
                 Last updated: {lastRefresh.toLocaleTimeString()} • Data from db.json
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <Button
                 onClick={fetchTripHistory}
                 disabled={isLoading}
-                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg"
+                className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white px-4 py-2 rounded-lg w-full sm:w-auto"
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
@@ -241,112 +241,80 @@ export default function TripHistory() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {/* Filters */}
             <div className="mb-6 p-4 bg-slate-50 rounded-lg">
               <h3 className="text-sm font-semibold text-slate-700 mb-3">Filters</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Date Filter */}
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Date</label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                    className="border-slate-200 rounded-lg"
-                  />
-                </div>
-
-                {/* Status Filter */}
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Status</label>
+              <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-lg border border-slate-100">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+                    <Input
+                      placeholder="Search route, bus, date..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Input type="date" value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} />
                   <Select
                     value={selectedStatus}
                     onChange={(e) => setSelectedStatus(e.target.value)}
                     options={[
-                      { value: '', label: 'All Statuses' },
+                      { value: '', label: 'All Status' },
                       { value: 'scheduled', label: 'Scheduled' },
                       { value: 'in-progress', label: 'In Progress' },
                       { value: 'completed', label: 'Completed' },
-                      { value: 'cancelled', label: 'Cancelled' }
+                      { value: 'cancelled', label: 'Cancelled' },
                     ]}
                   />
-                </div>
-
-                {/* Route Filter */}
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Route</label>
                   <Select
                     value={selectedRoute}
                     onChange={(e) => setSelectedRoute(e.target.value)}
                     options={[
                       { value: '', label: 'All Routes' },
-                      ...routes.map(route => ({
-                        value: route.id,
-                        label: route.name
-                      }))
+                      ...routes.map(r => ({ value: r.id, label: r.name }))
                     ]}
                   />
                 </div>
-
-                {/* Search */}
-                <div>
-                  <label className="text-sm font-medium text-slate-700 mb-2 block">Search</label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      placeholder="Search trips..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 border-slate-200 rounded-lg"
-                    />
-                  </div>
+                <div className="mt-4 flex flex-col sm:flex-row sm:justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedDate('');
+                      setSelectedStatus('');
+                      setSelectedRoute('');
+                      setSearchTerm('');
+                    }}
+                    className="flex items-center gap-2 w-full sm:w-auto"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Clear Filters
+                  </Button>
                 </div>
-              </div>
-
-              {/* Clear Filters */}
-              <div className="flex justify-end mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setSelectedDate('');
-                    setSelectedStatus('');
-                    setSelectedRoute('');
-                    setSearchTerm('');
-                  }}
-                  className="border-slate-200 hover:bg-slate-100 rounded-lg"
-                >
-                  Clear All Filters
-                </Button>
               </div>
             </div>
 
-            {/* Trips Table */}
             {filteredTrips.length > 0 ? (
               <div className="overflow-hidden rounded-lg border border-slate-200">
                 <Table>
                   <TableHeader className="bg-slate-50">
                     <TableRow className="border-slate-200">
-                                             <TableHead className="text-slate-700 font-semibold text-xs">Date</TableHead>
-                       <TableHead className="text-slate-700 font-semibold text-xs">Route</TableHead>
-                       <TableHead className="text-slate-700 font-semibold text-xs">Bus</TableHead>
-                       <TableHead className="text-slate-700 font-semibold text-xs">Time</TableHead>
-                       <TableHead className="text-slate-700 font-semibold text-xs">Passengers</TableHead>
-                       <TableHead className="text-slate-700 font-semibold text-xs">Status</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-xs">Date</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-xs">Route</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-xs">Bus</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-xs">Time</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-xs">Passengers</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-xs">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTrips.map((trip, index) => {
                       const routeInfo = getRouteInfo(trip.routeId);
                       return (
-                        <TableRow 
-                          key={trip.id} 
-                          className={`border-slate-100 ${
-                            index % 2 === 0 ? 'bg-white' : 'bg-slate-50'
-                          }`}
+                        <TableRow
+                          key={trip.id}
+                          className={`border-slate-100 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}`}
                         >
-                          <TableCell className="font-medium text-slate-900 text-sm">
-                            {formatDate(trip.date)}
-                          </TableCell>
+                          <TableCell className="font-medium text-slate-900 text-sm">{formatDate(trip.date)}</TableCell>
                           <TableCell>
                             <div className="space-y-1">
                               <div className="flex items-center gap-2">
@@ -354,9 +322,7 @@ export default function TripHistory() {
                                 <span className="font-medium text-sm">{getRouteName(trip.routeId)}</span>
                               </div>
                               {routeInfo && (
-                                <div className="text-xs text-slate-500">
-                                  {routeInfo.startPoint} → {routeInfo.endPoint}
-                                </div>
+                                <div className="text-xs text-slate-500">{routeInfo.startPoint} → {routeInfo.endPoint}</div>
                               )}
                             </div>
                           </TableCell>
@@ -373,21 +339,17 @@ export default function TripHistory() {
                                 <span className="font-medium text-sm">{trip.startTime}</span>
                               </div>
                               {trip.endTime && (
-                                <div className="text-xs text-slate-500">
-                                  End: {trip.endTime}
-                                </div>
+                                <div className="text-xs text-slate-500">End: {trip.endTime}</div>
                               )}
                             </div>
                           </TableCell>
-                                                     <TableCell>
-                             <div className="flex items-center gap-2">
-                               <Users className="h-3 w-3 text-purple-600" />
-                               <span className="font-medium text-sm">{trip.passengers}</span>
-                             </div>
-                           </TableCell>
-                           <TableCell>
-                             {getStatusBadge(trip.status)}
-                           </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-3 w-3 text-purple-600" />
+                              <span className="font-medium text-sm">{trip.passengers}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getStatusBadge(trip.status)}</TableCell>
                         </TableRow>
                       );
                     })}

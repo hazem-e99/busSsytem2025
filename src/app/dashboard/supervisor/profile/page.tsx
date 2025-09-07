@@ -135,7 +135,7 @@ export default function SupervisorProfilePage() {
       if (trimmedData.firstName && (trimmedData.firstName.length < 2 || trimmedData.firstName.length > 50)) {
         alert('First name must be between 2 and 50 characters.');
       return;
-    }
+      }
 
       if (trimmedData.lastName && (trimmedData.lastName.length < 2 || trimmedData.lastName.length > 50)) {
         alert('Last name must be between 2 and 50 characters.');
@@ -329,11 +329,11 @@ export default function SupervisorProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-100 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-100 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Modern Header */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
               <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-orange-500 to-amber-600">
@@ -361,7 +361,7 @@ export default function SupervisorProfilePage() {
           </div>
         </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 w-full lg:w-auto">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -372,7 +372,7 @@ export default function SupervisorProfilePage() {
               <Button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploadingImage}
-                className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg"
+                className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg w-full sm:w-auto"
               >
                 {isUploadingImage ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -383,7 +383,7 @@ export default function SupervisorProfilePage() {
               </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
-                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg"
+                className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
                 {isEditing ? 'Cancel Edit' : 'Edit Profile'}
@@ -601,11 +601,11 @@ export default function SupervisorProfilePage() {
                 
                 {/* Action Buttons */}
                 {isEditing && (
-                  <div className="flex gap-4 pt-6 mt-6 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-6 mt-6 border-t border-gray-200">
                     <Button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg flex-1"
+                      className="bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white shadow-lg w-full sm:flex-1"
                     >
                       {isSaving ? (
                         <>
@@ -622,12 +622,12 @@ export default function SupervisorProfilePage() {
                     <Button
                       onClick={handleCancel}
                       variant="outline"
-                      className="flex-1 border-gray-300 hover:bg-gray-50"
+                      className="w-full sm:flex-1 border-gray-300 hover:bg-gray-50"
                     >
                       <X className="w-4 h-4 mr-2" />
                       Cancel
                     </Button>
-                    </div>
+                  </div>
                 )}
 
                 {/* Info Footer */}

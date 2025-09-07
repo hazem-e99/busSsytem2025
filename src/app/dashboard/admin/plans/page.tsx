@@ -235,13 +235,13 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Subscription Plans</h1>
           <p className="text-gray-600">Manage available subscription plans</p>
         </div>
-        <Button onClick={openCreate}><Plus className="w-4 h-4 mr-2" />Add Plan</Button>
+        <Button onClick={openCreate} className="w-full sm:w-auto"><Plus className="w-4 h-4 mr-2" />Add Plan</Button>
       </div>
 
       {error && (
@@ -256,7 +256,8 @@ export default function PlansPage() {
           <CardDescription>{plans.length} plan(s)</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <div className="w-full overflow-x-auto">
+          <Table className="min-w-[720px] sm:min-w-0">
             <TableHeader>
               <TableRow>
                 <TableHead>ID</TableHead>
@@ -286,7 +287,7 @@ export default function PlansPage() {
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -328,6 +329,7 @@ export default function PlansPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
         </CardContent>
       </Card>
 
@@ -336,7 +338,7 @@ export default function PlansPage() {
           {/* Basic Details */}
           <div className="rounded-xl border bg-sky-50/60 p-4 space-y-4">
             <h4 className="text-sm font-semibold text-gray-700">Basic Details</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                 <p className="text-xs text-gray-500 mb-2">3-100 characters, unique plan name.</p>
@@ -365,7 +367,7 @@ export default function PlansPage() {
           {/* Pricing & Duration */}
           <div className="rounded-xl border bg-emerald-50/60 p-4 space-y-4">
             <h4 className="text-sm font-semibold text-gray-700">Pricing & Duration</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Price *</label>
                 <p className="text-xs text-gray-500 mb-2">0.01 - 10,000. Use two decimals.</p>
@@ -396,11 +398,11 @@ export default function PlansPage() {
             </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+          <div className="flex flex-col sm:flex-row sm:justify-end gap-2">
+            <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="w-full sm:w-auto">
               Cancel
             </Button>
-            <Button type="submit">
+            <Button type="submit" className="w-full sm:w-auto">
               {editing ? 'Save Changes' : 'Create Plan'}
             </Button>
           </div>

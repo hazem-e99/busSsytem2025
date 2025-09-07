@@ -431,15 +431,15 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 sm:p-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
-        <div className="flex items-center justify-between">
+      <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-5 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold text-text-primary tracking-tight">Users Management</h1>
             <p className="text-text-secondary mt-2">Manage all system users and their permissions</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
               <UserPlus className="w-5 h-5" />
               Add User
@@ -449,9 +449,9 @@ export default function UsersPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6">
         <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Users className="w-6 h-6 text-blue-600" />
@@ -465,7 +465,7 @@ export default function UsersPage() {
         </Card>
 
         <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-green-100 rounded-lg">
                 <Shield className="w-6 h-6 text-green-600" />
@@ -481,7 +481,7 @@ export default function UsersPage() {
         </Card>
 
         <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Users className="w-6 h-6 text-purple-600" />
@@ -497,7 +497,7 @@ export default function UsersPage() {
         </Card>
 
         <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Users className="w-6 h-6 text-orange-600" />
@@ -513,7 +513,7 @@ export default function UsersPage() {
         </Card>
 
         <Card className="rounded-xl border shadow-sm hover:shadow-md transition-shadow">
-          <CardContent className="p-6">
+          <CardContent className="p-5 sm:p-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-red-100 rounded-lg">
                 <Users className="w-6 h-6 text-red-600" />
@@ -531,8 +531,8 @@ export default function UsersPage() {
 
       {/* Search and Filters */}
       <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <CardContent className="p-5 sm:p-6">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -545,7 +545,7 @@ export default function UsersPage() {
               </div>
             </div>
             
-            <div className="flex gap-4 items-center">
+            <div className="flex flex-wrap gap-3 items-center">
               <Select
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
@@ -559,7 +559,7 @@ export default function UsersPage() {
                 <option value="admin">Admin</option>
               </Select>
 
-              <div className="hidden md:flex items-center gap-2 rounded-full border bg-white px-1 py-1">
+              <div className="flex flex-wrap items-center gap-2 rounded-full border bg-white px-1 py-1">
                 {['all','active','inactive','suspended'].map((s) => (
                   <Button
                     key={s}
@@ -709,7 +709,7 @@ export default function UsersPage() {
             <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
               <UserPlus className="w-4 h-4 text-blue-600" /> Basic Information
             </h4>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   First Name
@@ -740,7 +740,7 @@ export default function UsersPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Email
@@ -957,7 +957,7 @@ export default function UsersPage() {
       >
         {selectedUser && (
           <form onSubmit={handleEditUser} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Full Name
@@ -983,7 +983,7 @@ export default function UsersPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Role
@@ -1013,7 +1013,7 @@ export default function UsersPage() {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Status

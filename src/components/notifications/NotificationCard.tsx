@@ -140,14 +140,14 @@ export function NotificationCard({
     <Card className={`p-6 transition-all duration-200 hover:shadow-md ${
       !notification.isRead ? 'bg-white border-l-4 border-l-primary' : 'bg-gray-50'
     }`}>
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1">
-          <div className="flex items-start space-x-3 mb-3">
+          <div className="flex items-start gap-3 mb-3">
             <div className="mt-1">
               {getNotificationIcon(notificationType)}
             </div>
-            <div className="flex-1">
-              <div className="flex items-center space-x-3 mb-2">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-2">
                 <h3 className={`text-lg font-semibold ${
                   !notification.isRead ? 'text-gray-900' : 'text-gray-700'
                 }`}>
@@ -164,24 +164,21 @@ export function NotificationCard({
                   {notification.message}
                 </p>
               )}
-              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                <div className="flex items-center space-x-1">
+              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
                   <span>{notification.timeAgo || getRelativeTime(notification.sentAt)}</span>
                 </div>
                 {notification.userName && (
-                  <>
-                    <span>•</span>
-                    <span>From: {notification.userName}</span>
-                  </>
+                  <span className="whitespace-nowrap">From: {notification.userName}</span>
                 )}
               </div>
             </div>
           </div>
         </div>
-        
+
         {showActions && (
-          <div className="flex items-center space-x-2 ml-4">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2 sm:ml-4">
             {!notification.isRead ? (
               <Button
                 size="sm"

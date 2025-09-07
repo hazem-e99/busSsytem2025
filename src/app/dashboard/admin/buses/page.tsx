@@ -504,45 +504,45 @@ export default function BusesPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Bus Management</h1>
           <p className="text-gray-600">Manage fleet vehicles and their assignments</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)}>
+        <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add New Bus
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
-          <CardContent className="p-5">
+          <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-blue-600">{busStats.total}</div>
             <p className="text-xs text-gray-500">Total Buses</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
-          <CardContent className="p-5">
+          <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-green-600">{busStats.active}</div>
             <p className="text-xs text-gray-500">Active</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
-          <CardContent className="p-5">
+          <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-yellow-600">{busStats.maintenance}</div>
             <p className="text-xs text-gray-500">Maintenance</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
-          <CardContent className="p-5">
+          <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-red-600">{busStats.outOfService}</div>
             <p className="text-xs text-gray-500">Out of Service</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
-          <CardContent className="p-5">
+          <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-purple-600">{busStats.totalCapacity}</div>
             <p className="text-xs text-gray-500">Total Capacity</p>
           </CardContent>
@@ -557,7 +557,7 @@ export default function BusesPage() {
           <CardDescription>Find specific buses or filter by criteria</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
@@ -708,7 +708,7 @@ export default function BusesPage() {
               {addMessage.text}
             </div>
           )}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Bus Number
@@ -743,7 +743,7 @@ export default function BusesPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Status
@@ -958,7 +958,7 @@ export default function BusesPage() {
             </div>
 
             {/* Stats grid */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-gradient-to-br from-white to-slate-50 rounded-lg shadow-sm">
                 <p className="text-xs text-gray-400">Capacity</p>
                 <div className="mt-1 text-lg font-semibold text-gray-800">{selectedBus.capacity ?? 'N/A'} seats</div>

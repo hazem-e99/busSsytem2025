@@ -371,10 +371,10 @@ export default function StudentSubscriptionPage() {
     }
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-4 sm:p-6">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-4 sm:p-6 space-y-8">
       {/* Current Subscription Card - Redesigned */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }} 
@@ -395,7 +395,7 @@ export default function StudentSubscriptionPage() {
           </div>
 
           <CardHeader className="relative z-10 pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex items-center gap-3">
                 <div className={`p-3 rounded-xl ${
                   status === 'active' 
@@ -417,7 +417,7 @@ export default function StudentSubscriptionPage() {
             </div>
               
               {/* Status Badge */}
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex sm:flex-col items-start sm:items-end gap-2">
               {status === 'active' && (
                   <Badge className="bg-green-100 text-green-800 border-green-200 px-4 py-2 text-sm font-semibold">
                     <CheckCircle className="w-4 h-4 mr-2" /> 
@@ -615,14 +615,14 @@ export default function StudentSubscriptionPage() {
       {/* Pending Approval Banner for cash */}
       {currentMethod?.toLowerCase() === 'cash' && status !== 'active' && (
         <Card className="border-2 border-amber-200 bg-amber-50">
-          <CardContent className="p-5 flex items-center justify-between gap-4">
+          <CardContent className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="text-amber-800 text-sm">
               <div className="font-semibold mb-1">Wait for confirmation</div>
               <div>Your payment is cash. Please wait for admin to confirm before accessing bus features.</div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => window.location.reload()}>Refresh</Button>
-              <Button variant="destructive" onClick={logout}>Logout</Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" onClick={() => window.location.reload()} className="w-full sm:w-auto">Refresh</Button>
+              <Button variant="destructive" onClick={logout} className="w-full sm:w-auto">Logout</Button>
             </div>
           </CardContent>
         </Card>
@@ -630,15 +630,15 @@ export default function StudentSubscriptionPage() {
 
       {/* Plans Grid */}
       <div>
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
           <h2 className="text-2xl font-bold text-text-primary flex items-center gap-2">
             <Crown className="w-5 h-5 text-secondary" /> Your Plan
           </h2>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             {status === 'active' && activeSubscription && (
               <Button 
                 onClick={handleUpgradeClick}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-2 rounded-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 w-full sm:w-auto"
               >
                 <Crown className="w-4 h-4 mr-2" />
                 Upgrade Plan
@@ -649,7 +649,7 @@ export default function StudentSubscriptionPage() {
             </span>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
           {(((currentPlan && status) ? (plans || []).filter((p: Plan) => {
               const t = String(p.type || p.name || '').toLowerCase();
               const c = String(currentPlan).toLowerCase();
