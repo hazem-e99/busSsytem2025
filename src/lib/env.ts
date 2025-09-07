@@ -1,7 +1,7 @@
 // API Configuration
 export const API_CONFIG = {
   // Global API base URL
-  GLOBAL_BASE_URL: 'http://72.60.35.47/api',
+  GLOBAL_BASE_URL: 'https://api.el-renad.com',
   
   // Authentication endpoints
   AUTH: {
