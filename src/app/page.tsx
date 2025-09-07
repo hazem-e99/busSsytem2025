@@ -132,6 +132,50 @@ function ParticleBurst() {
   );
 }
 
+// Decorative clouds
+function Clouds() {
+  return (
+    <>
+      <motion.div
+        className="absolute top-10 left-[-20%] w-72 h-24 rounded-full bg-white/10 blur-lg"
+        animate={{ x: ['-20%', '120%'] }}
+        transition={{ duration: 35, repeat: Infinity, ease: 'linear' }}
+      />
+      <motion.div
+        className="absolute top-24 left-[-40%] w-40 h-16 rounded-full bg-white/10 blur-md"
+        animate={{ x: ['-40%', '140%'] }}
+        transition={{ duration: 50, repeat: Infinity, ease: 'linear' }}
+      />
+      <motion.div
+        className="absolute top-36 left-[-30%] w-56 h-20 rounded-full bg-white/10 blur-md"
+        animate={{ x: ['-30%', '130%'] }}
+        transition={{ duration: 42, repeat: Infinity, ease: 'linear' }}
+      />
+    </>
+  );
+}
+
+// Road with animated lane divider
+function Road() {
+  return (
+    <div className="absolute bottom-0 left-0 right-0 h-40 md:h-48 z-[6]">
+      {/* asphalt */}
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-800 to-slate-900" />
+      {/* shoulders */}
+      <div className="absolute left-0 right-0 h-2 bg-amber-700/60" />
+      <div className="absolute bottom-0 left-0 right-0 h-2 bg-amber-700/60" />
+      {/* lane divider (animated dashed) */}
+      <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 overflow-hidden">
+        <motion.div
+          className="h-full w-[200%] bg-[repeating-linear-gradient(90deg,rgba(255,255,255,0.9)_0_60px,transparent_60px_120px)]"
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+        />
+      </div>
+    </div>
+  );
+}
+
 // Main Welcome Page Component
 export default function WelcomePage() {
   const router = useRouter();
@@ -159,22 +203,8 @@ export default function WelcomePage() {
     setTimeout(() => setIsLoaded(true), 2000);
 
 
-    // Auto redirect after 8 seconds
-    const redirectTimer = setTimeout(() => {
-      gsap.to(containerRef.current, {
-        opacity: 0,
-        scale: 0.5,
-        rotationY: 180,
-        rotationX: 90,
-        duration: 1,
-        ease: "power3.in",
-        onComplete: () => router.push('/auth/login')
-      });
-    }, 8000);
-
-    return () => {
-      clearTimeout(redirectTimer);
-    };
+    // Optional: keep user on welcome until they choose to proceed
+    return () => {};
   }, [router]);
 
   // Prevent hydration mismatch
@@ -193,6 +223,7 @@ export default function WelcomePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-black relative overflow-hidden">
       {/* Particle Burst Effect */}
       <ParticleBurst />
+      <Clouds />
 
       {/* 3D Background */}
       <div className="absolute inset-0 opacity-60">
@@ -207,29 +238,33 @@ export default function WelcomePage() {
         </Canvas>
       </div>
 
-      {/* Animated Bus */}
+      {/* Road scene with moving bus */}
+      <Road />
       <motion.div
-        className="absolute bottom-0 left-0 z-5"
-        initial={{ x: -400, y: 0, rotateY: -45 }}
-        animate={{ x: "100vw", y: 0, rotateY: 45 }}
-        transition={{ 
-          duration: 12, 
-          ease: "linear",
-          repeat: Infinity,
-          repeatDelay: 3
-        }}
+        className="absolute bottom-6 md:bottom-8 left-[-30%] z-[7]"
+        initial={{ x: '-30vw', y: 0, rotateZ: 0 }}
+        animate={{ x: '130vw', y: [0, -2, 0], rotateZ: [0, 0.3, 0] }}
+        transition={{ duration: 8, ease: 'linear', repeat: 0 }}
+        onAnimationComplete={() => router.push('/auth/login')}
       >
         <Image
           src="/cityus-rafiki.png"
-          alt="Bus Animation"
-          width={500}
-          height={250}
-          className="object-contain drop-shadow-2xl"
+          alt="El Renad Bus"
+          width={420}
+          height={200}
+          className="object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.45)]"
+          priority
         />
       </motion.div>
 
+      {/* Footer developer credits near the bottom of the road */}
+      <div className="absolute bottom-2 left-0 right-0 z-[8] flex flex-col items-center text-center">
+        <p className="text-xs md:text-sm text-gray-300/90">Developed by: Hazem Essam & Youssry Essam</p>
+        <p className="text-xs md:text-sm text-gray-400/90">📞 01094575914 & 01289529751</p>
+      </div>
+
       {/* Main Content */}
-      <div ref={containerRef} className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4">
+      <div ref={containerRef} className="relative z-10 min-h-screen flex flex-col items-center justify-start pt-4 md:pt-6 px-4">
         
         {/* 3D Logo Section */}
         <motion.div
@@ -272,77 +307,33 @@ export default function WelcomePage() {
           initial={{ opacity: 0, y: 100, rotateX: -90 }}
           animate={isLoaded ? { opacity: 1, y: 0, rotateX: 0 } : {}}
           transition={{ delay: 1, duration: 1.5 }}
-          className="absolute top-4 right-4 text-3xl md:text-4xl font-bold"
+          className="text-center text-3xl md:text-5xl font-extrabold tracking-tight text-white"
         >
-          <motion.div
-            className="text-gradient bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent"
-            animate={{
-              backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "linear"
-            }}
-            style={{
-              backgroundSize: '200% 200%',
-            }}
-          >
-            الريناد
-          </motion.div>
+          <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 bg-clip-text text-transparent">
+            منصة الريناد للنقل الجامعي
+          </span>
         </motion.h1>
 
-        {/* Developer Info with 3D Animation */}
+        {/* Intro section */}
         <motion.div
-          initial={{ opacity: 0, y: 50, rotateZ: -180 }}
-          animate={isLoaded ? { opacity: 1, y: 0, rotateZ: 0 } : {}}
-          transition={{ delay: 1.5, duration: 1 }}
-          className="absolute top-4 left-4 text-gray-300"
+          initial={{ opacity: 0, y: 30 }}
+          animate={isLoaded ? { opacity: 1, y: 0 } : {}}
+          transition={{ delay: 1.2, duration: 0.9 }}
+          className="mt-6 max-w-3xl text-center text-gray-300"
         >
-          <motion.div
-            whileHover={{ 
-              scale: 1.05, 
-              rotateY: 5,
-              transition: { duration: 0.3 }
-            }}
-          >
-            <motion.p 
-              className="text-sm font-medium mb-1"
-              animate={{
-                textShadow: [
-                  '0 0 5px #0ea5e9',
-                  '0 0 15px #0ea5e9, 0 0 25px #0ea5e9',
-                  '0 0 5px #0ea5e9'
-                ]
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              Developed by: <span className="text-cyan-400 font-semibold">Hazem Essam</span> &{' '}
-              <span className="text-cyan-400 font-semibold">Youssry Essam</span>
-            </motion.p>
-            <motion.p 
-              className="text-sm text-blue-300"
-              animate={{
-                textShadow: [
-                  '0 0 5px #3b82f6',
-                  '0 0 10px #3b82f6',
-                  '0 0 5px #3b82f6'
-                ]
-              }}
-              transition={{
-                duration: 2.5,
-                repeat: Infinity,
-                ease: "easeInOut"
-              }}
-            >
-              📞 01094575914 & 01289529751
-            </motion.p>
-          </motion.div>
+          <p className="text-lg md:text-xl leading-8">
+            نظام متكامل لإدارة رحلات الأتوبيسات الجامعية. حجز وتتبع الرحلات، إدارة المشتركين،
+            إشعارات لحظية، ولوحة تحكم حديثة لكل الأدوار.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 text-sm">حجز الرحلات</span>
+            <span className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 text-sm">إدارة الاشتراكات</span>
+            <span className="px-3 py-1 rounded-full bg-yellow-500/10 text-yellow-300 border border-yellow-500/30 text-sm">إشعارات فورية</span>
+            <span className="px-3 py-1 rounded-full bg-fuchsia-500/10 text-fuchsia-300 border border-fuchsia-500/30 text-sm">لوحات تحكم للأدوار</span>
+          </div>
         </motion.div>
+
+        
 
       </div>
     </div>
