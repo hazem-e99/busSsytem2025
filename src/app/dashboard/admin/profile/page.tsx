@@ -236,11 +236,11 @@ export default function AdminProfilePage() {
     
     // If it's a relative path, make it absolute
     if (imagePath.startsWith('/')) {
-      return `https://api.el-renad.com${imagePath}`;
+      return `http://72.60.35.47${imagePath}`;
     }
     
     // If it's just a filename, assume it's in uploads folder
-    return `https://api.el-renad.com/uploads/${imagePath}`;
+    return `http://72.60.35.47/uploads/${imagePath}`;
   };
 
   // Get avatar display
