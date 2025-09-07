@@ -595,7 +595,7 @@ export const userAPI = {
       console.error("Failed to get auth token:", error);
     }
     
-    const baseURL = "https://api.el-renad.com";
+    const baseURL = "https://api.el-renad.com/api";
     const url = `${baseURL}/Users/update-profile-picture`;
     
     console.log("🌐 Uploading profile picture to:", url);

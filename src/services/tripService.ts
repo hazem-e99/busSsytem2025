@@ -1,7 +1,7 @@
 import { api } from "@/lib/api";
 import { CreateTripDTO, UpdateTripDTO, TripViewModel, TripResponse } from "@/types/trip";
 
-// Central Trip Service matching Swagger endpoints at base URL https://api.el-renad.com
+// Central Trip Service matching Swagger endpoints at base URL https://api.el-renad.com/api
 // Endpoints (relative to /api):
 // GET    /Trip
 // GET    /Trip/{id}
@@ -31,7 +31,7 @@ export const tripService = {
 
   // Create trip using the specified API format
   async create(payload: CreateTripDTO): Promise<TripResponse> {
-    const baseUrl = "https://api.el-renad.com";
+    const baseUrl = "https://api.el-renad.com/api";
 
     // Get token from localStorage
     const token = localStorage.getItem('token') || localStorage.getItem('authToken') || localStorage.getItem('access_token');

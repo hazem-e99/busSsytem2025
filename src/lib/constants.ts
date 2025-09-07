@@ -53,7 +53,7 @@ export const CHART_COLORS = [
 // API Configuration Constants
 export const API_CONSTANTS = {
   // Global API base URL
-  GLOBAL_BASE_URL: 'https://api.el-renad.com',
+  GLOBAL_BASE_URL: 'https://api.el-renad.com/api',
   
   // Authentication endpoints
   ENDPOINTS: {

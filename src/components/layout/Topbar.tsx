@@ -73,11 +73,11 @@ export const Topbar = () => {
             
             // If it's a relative path, build full URL
             if (imagePath.startsWith('/')) {
-              return `https://api.el-renad.com${imagePath}`;
+              return `https://api.el-renad.com/api${imagePath}`;
             }
             
             // If it's just a filename, assume it's in uploads folder
-            return `https://api.el-renad.com/uploads/${imagePath}`;
+            return `https://api.el-renad.com/api/uploads/${imagePath}`;
           };
           
           // Create user profile object with correct data
@@ -347,13 +347,13 @@ export const Topbar = () => {
       
       // Check if it's a relative path
       if (avatarUrl.startsWith('/')) {
-        const fullUrl = `https://api.el-renad.com${avatarUrl}`;
+        const fullUrl = `https://api.el-renad.com/api${avatarUrl}`;
         console.log('🖼️ getUserAvatar - Built URL from relative path:', fullUrl);
         return fullUrl;
       }
       
       // If it's just a filename, assume it's in uploads folder
-      const uploadsUrl = `https://api.el-renad.com/uploads/${avatarUrl}`;
+      const uploadsUrl = `https://api.el-renad.com/api/uploads/${avatarUrl}`;
       console.log('🖼️ getUserAvatar - Built URL from filename:', uploadsUrl);
       return uploadsUrl;
     }

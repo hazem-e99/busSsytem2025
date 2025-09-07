@@ -353,11 +353,11 @@ export default function StudentProfilePage() {
     
     // If it's a relative path, make it absolute
     if (imagePath.startsWith('/')) {
-      return `https://api.el-renad.com${imagePath}`;
+      return `https://api.el-renad.com/api${imagePath}`;
     }
     
     // If it's just a filename, assume it's in uploads folder
-    return `https://api.el-renad.com/uploads/${imagePath}`;
+    return `https://api.el-renad.com/api/uploads/${imagePath}`;
   };
 
   // Get avatar display
