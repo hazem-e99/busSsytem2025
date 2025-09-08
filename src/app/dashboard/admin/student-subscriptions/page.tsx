@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { useI18n } from '@/contexts/LanguageContext';
 import { useToast } from '@/components/ui/Toast';
 import { studentAPI, paymentAPI, subscriptionPlansAPI } from '@/lib/api';
 import { PaymentMethod, PaymentStatus, ReviewPaymentDTO } from '@/types/subscription';
@@ -9,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
-import { CheckCircle, XCircle, Clock, AlertCircle, Users, CreditCard, Search, Activity, Filter, X, Calendar, DollarSign } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, AlertCircle, Users, CreditCard, Search, Activity, Filter, X } from 'lucide-react';
 import { Select } from '@/components/ui/Select';
 
 // Updated interfaces based on Swagger schemas
@@ -63,6 +64,7 @@ interface SubscriptionPlan {
 }
 
 export default function StudentSubscriptionsPage() {
+  const { t } = useI18n();
   const [students, setStudents] = useState<Student[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -77,10 +79,11 @@ export default function StudentSubscriptionsPage() {
   const [amountFilter, setAmountFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const { showToast } = useToast();
+  const tRef = useRef(t);
+  const toastRef = useRef(showToast);
+  useEffect(() => { tRef.current = t; toastRef.current = showToast; }, [t, showToast]);
 
-  useEffect(() => { load(); }, []);
-
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔍 Loading admin student subscriptions data...');
@@ -108,29 +111,31 @@ export default function StudentSubscriptionsPage() {
       setPayments(paymentsData || []);
       setPlans(plansData || []);
 
-      // Show success message if data loaded successfully
+    // Show success message if data loaded successfully
       if (paymentsData && paymentsData.length > 0) {
         console.log('✅ Data loaded successfully!');
         showToast({ 
           type: 'success', 
-          title: 'Data Loaded Successfully', 
-          message: `Found ${paymentsData.length} payment records` 
+      title: tRef.current('pages.admin.studentSubscriptions.toasts.loadSuccess', 'Data Loaded Successfully'), 
+      message: `${tRef.current('pages.admin.studentSubscriptions.toasts.found', 'Found')} ${paymentsData.length} ${tRef.current('pages.admin.studentSubscriptions.toasts.paymentRecords', 'payment records')}` 
         });
       } else {
         console.warn('⚠️ No payment data received');
         showToast({ 
           type: 'warning', 
-          title: 'No payment data', 
-          message: 'No payment records found in the system' 
+      title: tRef.current('pages.admin.studentSubscriptions.toasts.noPaymentData', 'No payment data'), 
+      message: tRef.current('pages.admin.studentSubscriptions.toasts.noPaymentRecords', 'No payment records found in the system') 
         });
       }
     } catch (error) {
       console.error('❌ Error loading data:', error);
-      showToast({ type: 'error', title: 'Failed to load data', message: 'Please try again' });
+    showToast({ type: 'error', title: tRef.current('pages.admin.studentSubscriptions.errors.loadFailed', 'Failed to load data'), message: tRef.current('pages.admin.studentSubscriptions.errors.tryAgain', 'Please try again') });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
 
   // Get subscription payments (payments without tripId)
   const subscriptionPayments = useMemo(() => {
@@ -159,7 +164,7 @@ export default function StudentSubscriptionsPage() {
   }, [subscriptionPayments, plansMap]);
 
   // Filter by date range
-  const getDateRange = (filter: string) => {
+  const getDateRange = useCallback((filter: string) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -182,10 +187,10 @@ export default function StudentSubscriptionsPage() {
       default:
         return { from: null, to: null };
     }
-  };
+  }, [customDateFrom, customDateTo]);
 
   // Filter by amount range
-  const getAmountRange = (filter: string) => {
+  const getAmountRange = useCallback((filter: string) => {
     switch (filter) {
       case 'low':
         return { min: 0, max: 100 };
@@ -196,7 +201,7 @@ export default function StudentSubscriptionsPage() {
       default:
         return { min: 0, max: Infinity };
     }
-  };
+  }, []);
 
   const studentSubscriptions = useMemo(() => {
     console.log('🔄 Processing subscription payments with filters:', {
@@ -256,7 +261,7 @@ export default function StudentSubscriptionsPage() {
       
       return matchesSearch && matchesStatus && matchesMethod && matchesPlan && matchesDate && matchesAmount;
     });
-  }, [subscriptionPayments, plansMap, search, statusFilter, methodFilter, planFilter, dateFilter, amountFilter, customDateFrom, customDateTo]);
+  }, [subscriptionPayments, plansMap, search, statusFilter, methodFilter, planFilter, dateFilter, amountFilter, getDateRange, getAmountRange]);
 
   const reviewPayment = async (paymentId: number, status: PaymentStatus, reviewNotes?: string) => {
     try {
@@ -293,15 +298,15 @@ export default function StudentSubscriptionsPage() {
   const getStatusBadge = (status: PaymentStatus) => {
     switch (status) {
       case 'Accepted':
-        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />Accepted</Badge>;
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="w-3 h-3 mr-1" />{t('pages.admin.studentSubscriptions.status.accepted', 'Accepted')}</Badge>;
       case 'Rejected':
-        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />Rejected</Badge>;
+        return <Badge className="bg-red-100 text-red-800"><XCircle className="w-3 h-3 mr-1" />{t('pages.admin.studentSubscriptions.status.rejected', 'Rejected')}</Badge>;
       case 'Pending':
-        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />Pending</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800"><Clock className="w-3 h-3 mr-1" />{t('pages.admin.studentSubscriptions.status.pending', 'Pending')}</Badge>;
       case 'Cancelled':
-        return <Badge className="bg-gray-100 text-gray-800"><XCircle className="w-3 h-3 mr-1" />Cancelled</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800"><XCircle className="w-3 h-3 mr-1" />{t('pages.admin.studentSubscriptions.status.cancelled', 'Cancelled')}</Badge>;
       case 'Expired':
-        return <Badge className="bg-orange-100 text-orange-800"><AlertCircle className="w-3 h-3 mr-1" />Expired</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800"><AlertCircle className="w-3 h-3 mr-1" />{t('pages.admin.studentSubscriptions.status.expired', 'Expired')}</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
@@ -310,11 +315,11 @@ export default function StudentSubscriptionsPage() {
   const getPaymentMethodDisplay = (method: PaymentMethod | null) => {
     switch (method) {
       case 'Online':
-        return 'InstaPay';
+        return t('pages.admin.studentSubscriptions.paymentMethod.online', 'InstaPay');
       case 'Offline':
-        return 'Offline';
+        return t('pages.admin.studentSubscriptions.paymentMethod.offline', 'Offline');
       default:
-        return method || '—';
+        return method || t('common.na', 'N/A');
     }
   };
 
@@ -351,7 +356,7 @@ export default function StudentSubscriptionsPage() {
   const hasActiveFilters = search || statusFilter !== 'all' || methodFilter !== 'all' || 
     planFilter !== 'all' || dateFilter !== 'all' || amountFilter !== 'all';
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  if (loading) return <div className="p-6">{t('pages.admin.studentSubscriptions.loading', 'Loading...')}</div>;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -359,14 +364,14 @@ export default function StudentSubscriptionsPage() {
       <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary tracking-tight">Student Subscriptions Management</h1>
-            <p className="text-text-secondary mt-1">Manage student subscription payments and review payment status</p>
+            <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('pages.admin.studentSubscriptions.title', 'Student Subscriptions Management')}</h1>
+            <p className="text-text-secondary mt-1">{t('pages.admin.studentSubscriptions.subtitle', 'Manage student subscription payments and review payment status')}</p>
           </div>
           <div className="w-full sm:w-64">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input 
-                placeholder="Search students, plans..." 
+                placeholder={t('pages.admin.studentSubscriptions.searchPlaceholder', 'Search students, plans...')} 
                 value={search} 
                 onChange={e => setSearch(e.target.value)}
                 className="pl-10"
@@ -378,28 +383,28 @@ export default function StudentSubscriptionsPage() {
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Users className="w-5 h-5 text-blue-600" />
             <div>
-              <p className="text-sm text-text-secondary">Total Students</p>
+              <p className="text-sm text-text-secondary">{t('pages.admin.studentSubscriptions.stats.totalStudents', 'Total Students')}</p>
               <p className="font-semibold">{students.length}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-green-600" />
             <div>
-              <p className="text-sm text-text-secondary">Active Subscriptions</p>
+              <p className="text-sm text-text-secondary">{t('pages.admin.studentSubscriptions.stats.activeSubscriptions', 'Active Subscriptions')}</p>
               <p className="font-semibold">{subscriptionPayments.filter(p => p.status === 'Accepted').length}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Clock className="w-5 h-5 text-yellow-600" />
             <div>
-              <p className="text-sm text-text-secondary">Pending Reviews</p>
+              <p className="text-sm text-text-secondary">{t('pages.admin.studentSubscriptions.stats.pendingReviews', 'Pending Reviews')}</p>
               <p className="font-semibold">{subscriptionPayments.filter(p => p.status === 'Pending').length}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <CreditCard className="w-5 h-5 text-purple-600" />
             <div>
-              <p className="text-sm text-text-secondary">Total Payments</p>
+              <p className="text-sm text-text-secondary">{t('pages.admin.studentSubscriptions.stats.totalPayments', 'Total Payments')}</p>
               <p className="font-semibold">{subscriptionPayments.length}</p>
             </div>
           </div>
@@ -412,7 +417,7 @@ export default function StudentSubscriptionsPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
-              <CardTitle>Advanced Filters</CardTitle>
+              <CardTitle>{t('pages.admin.studentSubscriptions.filters.title', 'Advanced Filters')}</CardTitle>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {hasActiveFilters && (
@@ -423,7 +428,7 @@ export default function StudentSubscriptionsPage() {
                   className="text-red-600 hover:text-red-700"
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Clear All
+                  {t('pages.admin.studentSubscriptions.filters.clearAll', 'Clear All')}
                 </Button>
               )}
               <Button
@@ -431,7 +436,7 @@ export default function StudentSubscriptionsPage() {
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
               >
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
+                {showFilters ? t('pages.admin.studentSubscriptions.filters.hideFilters', 'Hide Filters') : t('pages.admin.studentSubscriptions.filters.showFilters', 'Show Filters')}
               </Button>
             </div>
           </div>
@@ -441,41 +446,41 @@ export default function StudentSubscriptionsPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {/* Status Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Status</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.admin.studentSubscriptions.filters.status', 'Status')}</label>
                 <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as PaymentStatus | 'all')}
                 >
-                  <option value="all">All Status</option>
-                  <option value="Pending">Pending</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Rejected">Rejected</option>
-                  <option value="Cancelled">Cancelled</option>
-                  <option value="Expired">Expired</option>
+                  <option value="all">{t('pages.admin.studentSubscriptions.filters.allStatus', 'All Status')}</option>
+                  <option value="Pending">{t('pages.admin.studentSubscriptions.status.pending', 'Pending')}</option>
+                  <option value="Accepted">{t('pages.admin.studentSubscriptions.status.accepted', 'Accepted')}</option>
+                  <option value="Rejected">{t('pages.admin.studentSubscriptions.status.rejected', 'Rejected')}</option>
+                  <option value="Cancelled">{t('pages.admin.studentSubscriptions.status.cancelled', 'Cancelled')}</option>
+                  <option value="Expired">{t('pages.admin.studentSubscriptions.status.expired', 'Expired')}</option>
                 </Select>
               </div>
 
               {/* Payment Method Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Payment Method</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.admin.studentSubscriptions.filters.paymentMethod', 'Payment Method')}</label>
                 <Select
                   value={methodFilter}
                   onChange={(e) => setMethodFilter(e.target.value as PaymentMethod | 'all')}
                 >
-                  <option value="all">All Methods</option>
-                  <option value="Online">InstaPay</option>
-                  <option value="Offline">Offline</option>
+                  <option value="all">{t('pages.admin.studentSubscriptions.filters.allMethods', 'All Methods')}</option>
+                  <option value="Online">{t('pages.admin.studentSubscriptions.paymentMethod.online', 'InstaPay')}</option>
+                  <option value="Offline">{t('pages.admin.studentSubscriptions.paymentMethod.offline', 'Offline')}</option>
                 </Select>
               </div>
 
               {/* Plan Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Subscription Plan</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.admin.studentSubscriptions.filters.plan', 'Subscription Plan')}</label>
                 <Select
                   value={planFilter}
                   onChange={(e) => setPlanFilter(e.target.value)}
                 >
-                  <option value="all">All Plans</option>
+                  <option value="all">{t('pages.admin.studentSubscriptions.filters.allPlans', 'All Plans')}</option>
                   {planOptions.map(plan => (
                     <option key={plan} value={plan}>{plan}</option>
                   ))}
@@ -484,49 +489,49 @@ export default function StudentSubscriptionsPage() {
 
               {/* Date Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Date Range</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.admin.studentSubscriptions.filters.dateRange', 'Date Range')}</label>
                 <Select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value as any)}
                 >
-                  <option value="all">All Time</option>
-                  <option value="today">Today</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                  <option value="custom">Custom Range</option>
+                  <option value="all">{t('pages.admin.studentSubscriptions.filters.allTime', 'All Time')}</option>
+                  <option value="today">{t('pages.admin.studentSubscriptions.filters.today', 'Today')}</option>
+                  <option value="week">{t('pages.admin.studentSubscriptions.filters.thisWeek', 'This Week')}</option>
+                  <option value="month">{t('pages.admin.studentSubscriptions.filters.thisMonth', 'This Month')}</option>
+                  <option value="custom">{t('pages.admin.studentSubscriptions.filters.customRange', 'Custom Range')}</option>
                 </Select>
               </div>
 
               {/* Amount Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Amount Range</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.admin.studentSubscriptions.filters.amountRange', 'Amount Range')}</label>
                 <Select
                   value={amountFilter}
                   onChange={(e) => setAmountFilter(e.target.value as any)}
                 >
-                  <option value="all">All Amounts</option>
-                  <option value="low">Low ($0 - $100)</option>
-                  <option value="medium">Medium ($100 - $500)</option>
-                  <option value="high">High ($500+)</option>
+                  <option value="all">{t('pages.admin.studentSubscriptions.filters.allAmounts', 'All Amounts')}</option>
+                  <option value="low">{t('pages.admin.studentSubscriptions.filters.low', 'Low ($0 - $100)')}</option>
+                  <option value="medium">{t('pages.admin.studentSubscriptions.filters.medium', 'Medium ($100 - $500)')}</option>
+                  <option value="high">{t('pages.admin.studentSubscriptions.filters.high', 'High ($500+)')}</option>
                 </Select>
               </div>
 
               {/* Custom Date Range */}
               {dateFilter === 'custom' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Custom Range</label>
+                  <label className="text-sm font-medium text-gray-700">{t('pages.admin.studentSubscriptions.filters.customRange', 'Custom Range')}</label>
                   <div className="space-y-2">
                     <Input
                       type="date"
                       value={customDateFrom}
                       onChange={(e) => setCustomDateFrom(e.target.value)}
-                      placeholder="From Date"
+                      placeholder={t('pages.admin.studentSubscriptions.filters.fromDate', 'From Date')}
                     />
                     <Input
                       type="date"
                       value={customDateTo}
                       onChange={(e) => setCustomDateTo(e.target.value)}
-                      placeholder="To Date"
+                      placeholder={t('pages.admin.studentSubscriptions.filters.toDate', 'To Date')}
                     />
                   </div>
                 </div>
@@ -541,15 +546,15 @@ export default function StudentSubscriptionsPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Activity className="w-5 h-5" />
-            Subscription Payments
+            {t('pages.admin.studentSubscriptions.table.title', 'Subscription Payments')}
             {hasActiveFilters && (
               <Badge variant="outline" className="ml-2">
-                {studentSubscriptions.length} filtered
+                {studentSubscriptions.length} {t('pages.admin.studentSubscriptions.table.filtered', 'filtered')}
               </Badge>
             )}
           </CardTitle>
           <CardDescription>
-            {studentSubscriptions.length} payment(s) from /api/Payment endpoint
+            {studentSubscriptions.length} {t('pages.admin.studentSubscriptions.table.payments', 'payment(s)')} {t('pages.admin.studentSubscriptions.table.fromApi', 'from /api/Payment endpoint')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -557,13 +562,13 @@ export default function StudentSubscriptionsPage() {
           <Table className="min-w-[900px] sm:min-w-0">
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Payment Method</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.student', 'Student')}</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.plan', 'Plan')}</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.amount', 'Amount')}</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.paymentMethod', 'Payment Method')}</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.status', 'Status')}</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.date', 'Date')}</TableHead>
+                <TableHead>{t('pages.admin.studentSubscriptions.table.actions', 'Actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -572,11 +577,11 @@ export default function StudentSubscriptionsPage() {
                   <TableCell colSpan={7} className="text-center py-8">
                     <div className="flex flex-col items-center space-y-2">
                       <AlertCircle className="w-12 h-12 text-gray-400" />
-                      <div className="text-lg font-medium text-gray-500">No Payment Data</div>
+                      <div className="text-lg font-medium text-gray-500">{t('pages.admin.studentSubscriptions.empty.noData', 'No Payment Data')}</div>
                       <div className="text-sm text-gray-400">
                         {payments.length === 0 
-                          ? 'No payment data available. Please check if you are logged in as admin.'
-                          : 'No subscription payments found in the system.'
+                          ? t('pages.admin.studentSubscriptions.empty.noDataAvailable', 'No payment data available. Please check if you are logged in as admin.')
+                          : t('pages.admin.studentSubscriptions.empty.noSubscriptionPayments', 'No subscription payments found in the system.')
                         }
                       </div>
                       <Button 
@@ -584,7 +589,7 @@ export default function StudentSubscriptionsPage() {
                         variant="outline" 
                         className="mt-2"
                       >
-                        Refresh Data
+                        {t('pages.admin.studentSubscriptions.empty.refresh', 'Refresh Data')}
                       </Button>
                     </div>
                   </TableCell>
@@ -602,7 +607,7 @@ export default function StudentSubscriptionsPage() {
                       <div>
                         <div className="font-medium">{row.planName}</div>
                         <div className="text-sm text-gray-500">
-                          {row.planDuration} days
+                          {row.planDuration} {t('pages.admin.studentSubscriptions.labels.days', 'days')}
                         </div>
                       </div>
                     </TableCell>
@@ -616,7 +621,7 @@ export default function StudentSubscriptionsPage() {
                         <div className="font-medium">{getPaymentMethodDisplay(row.paymentMethod)}</div>
                         {row.paymentReferenceCode && (
                           <div className="text-sm text-gray-500">
-                            Ref: {row.paymentReferenceCode}
+                            {t('pages.admin.studentSubscriptions.labels.ref', 'Ref:')} {row.paymentReferenceCode}
                           </div>
                         )}
                       </div>
@@ -627,11 +632,11 @@ export default function StudentSubscriptionsPage() {
                     <TableCell>
                       <div>
                         <div className="text-sm">
-                          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : '—'}
+                          {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : t('common.na', 'N/A')}
                         </div>
                         {row.reviewedAt && (
                           <div className="text-xs text-gray-500">
-                            Reviewed: {new Date(row.reviewedAt).toLocaleDateString()}
+                            {t('pages.admin.studentSubscriptions.labels.reviewed', 'Reviewed:')} {new Date(row.reviewedAt).toLocaleDateString()}
                           </div>
                         )}
                       </div>
@@ -641,29 +646,29 @@ export default function StudentSubscriptionsPage() {
                         <div className="flex flex-wrap gap-2">
                           <Button 
                             size="sm" 
-                            onClick={() => reviewPayment(row.paymentId!, PaymentStatus.Accepted, 'Payment approved by admin')}
+                            onClick={() => reviewPayment(row.paymentId!, PaymentStatus.Accepted, t('pages.admin.studentSubscriptions.reviewNotes.accept', 'Payment approved by admin'))}
                             className="bg-green-600 hover:bg-green-700"
                           >
-                            Accept
+                            {t('pages.admin.studentSubscriptions.actions.accept', 'Accept')}
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => reviewPayment(row.paymentId!, PaymentStatus.Rejected, 'Payment rejected by admin')}
+                            onClick={() => reviewPayment(row.paymentId!, PaymentStatus.Rejected, t('pages.admin.studentSubscriptions.reviewNotes.reject', 'Payment rejected by admin'))}
                             className="border-red-300 text-red-600 hover:bg-red-50"
                           >
-                            Reject
+                            {t('pages.admin.studentSubscriptions.actions.reject', 'Reject')}
                           </Button>
                         </div>
                       )}
                       {row.status === 'Accepted' && (
                         <div className="text-sm text-green-600 font-medium">
-                          ✓ Active
+                          ✓ {t('pages.admin.studentSubscriptions.labels.active', 'Active')}
                         </div>
                       )}
                       {row.status === 'Rejected' && (
                         <div className="text-sm text-red-600 font-medium">
-                          ✗ Rejected
+                          ✗ {t('pages.admin.studentSubscriptions.status.rejected', 'Rejected')}
                         </div>
                       )}
                     </TableCell>

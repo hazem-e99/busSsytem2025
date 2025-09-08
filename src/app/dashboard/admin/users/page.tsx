@@ -27,6 +27,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { User, UserRole, Student } from '@/types/user';
 import { formatDate } from '@/utils/formatDate';
+import { useI18n } from '@/contexts/LanguageContext';
 
 // Form field interfaces
 interface FormField {
@@ -58,6 +59,7 @@ interface ErrorWithMessage {
 }
 
 export default function UsersPage() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -84,6 +86,27 @@ export default function UsersPage() {
   const [error, setError] = useState('');
   const { showToast } = useToast();
   
+  // Build image URL helper
+  const buildImageUrl = (imagePath: string | undefined): string | undefined => {
+    if (!imagePath) return undefined;
+    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // If it's a relative path, build full URL
+    if (imagePath.startsWith('/')) {
+      if (imagePath.startsWith('/uploads')) {
+        return `https://api.el-renad.com${imagePath}`;
+      }
+      return `https://api.el-renad.com/api${imagePath}`;
+    }
+    
+    // If it's just a filename, assume it's in uploads folder
+    return `https://api.el-renad.com/uploads/${imagePath}`;
+  };
 
   // Fetch users from Global API (server-side role filter)
   useEffect(() => {
@@ -151,8 +174,11 @@ export default function UsersPage() {
             emergencyPhone: student.emergencyPhone
           }));
           
-          // Combine all users
-          usersData = [...generalUsers, ...mappedStudents];
+          // Filter out students from generalUsers to avoid duplication
+          const nonStudentUsers = generalUsers.filter((user: any) => user.role !== 'student');
+          
+          // Combine non-student users with mapped students
+          usersData = [...nonStudentUsers, ...mappedStudents];
         }
         
         setUsers(usersData);
@@ -317,7 +343,10 @@ export default function UsersPage() {
           emergencyPhone: student.emergencyPhone
         }));
         
-        refreshed = [...generalUsers, ...mappedStudents];
+        // Filter out students from generalUsers to avoid duplication
+        const nonStudentUsers = generalUsers.filter((user: any) => user.role !== 'student');
+        
+        refreshed = [...nonStudentUsers, ...mappedStudents];
       }
       setUsers(refreshed);
       
@@ -436,13 +465,13 @@ export default function UsersPage() {
       <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary tracking-tight">Users Management</h1>
-            <p className="text-text-secondary mt-2">Manage all system users and their permissions</p>
+            <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('pages.admin.users.title')}</h1>
+            <p className="text-text-secondary mt-2">{t('pages.admin.users.subtitle')}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
               <UserPlus className="w-5 h-5" />
-              Add User
+              {t('pages.admin.users.addUser')}
             </Button>
           </div>
         </div>
@@ -457,7 +486,7 @@ export default function UsersPage() {
                 <Users className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Total Users</p>
+                <p className="text-sm text-text-secondary">{t('pages.admin.users.totalUsers')}</p>
                 <p className="text-2xl font-bold text-text-primary">{users.length}</p>
               </div>
             </div>
@@ -471,7 +500,7 @@ export default function UsersPage() {
                 <Shield className="w-6 h-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Active Users</p>
+                <p className="text-sm text-text-secondary">{t('pages.admin.users.activeUsers')}</p>
                 <p className="text-2xl font-bold text-text-primary">
                   {users ? users.filter(u => u.status === 'active').length : 0}
                 </p>
@@ -487,7 +516,7 @@ export default function UsersPage() {
                 <Users className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Students</p>
+                <p className="text-sm text-text-secondary">{t('pages.admin.users.students')}</p>
                 <p className="text-2xl font-bold text-text-primary">
                   {users ? users.filter(u => u.role === 'student').length : 0}
                 </p>
@@ -503,7 +532,7 @@ export default function UsersPage() {
                 <Users className="w-6 h-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Drivers</p>
+                <p className="text-sm text-text-secondary">{t('pages.admin.users.drivers')}</p>
                 <p className="text-2xl font-bold text-text-primary">
                   {users ? users.filter(u => u.role === 'driver').length : 0}
                 </p>
@@ -519,7 +548,7 @@ export default function UsersPage() {
                 <Users className="w-6 h-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-text-secondary">Conductors</p>
+                <p className="text-sm text-text-secondary">{t('pages.admin.users.conductors')}</p>
                 <p className="text-2xl font-bold text-text-primary">
                   {users ? users.filter(u => u.role === 'conductor').length : 0}
                 </p>
@@ -537,7 +566,7 @@ export default function UsersPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <Input
-                  placeholder="Search users by name or email..."
+                  placeholder={t('pages.admin.users.searchPlaceholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
@@ -551,7 +580,7 @@ export default function UsersPage() {
                 onChange={(e) => setRoleFilter(e.target.value)}
                 className="min-w-[150px]"
               >
-                <option value="all">All Roles</option>
+                <option value="all">{t('pages.admin.users.allRoles')}</option>
                 <option value="student">Student</option>
                 <option value="driver">Driver</option>
                 <option value="conductor">Conductor</option>
@@ -581,7 +610,7 @@ export default function UsersPage() {
       {/* Users Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Users List</CardTitle>
+          <CardTitle>{t('pages.admin.users.usersList')}</CardTitle>
           <CardDescription>
             {filteredUsers.length} users found
           </CardDescription>
@@ -592,24 +621,35 @@ export default function UsersPage() {
               <div className="mb-4 rounded-full bg-slate-100 p-4">
                 <Users className="w-8 h-8 text-slate-500" />
               </div>
-              <p className="text-lg font-semibold text-text-primary">No users found</p>
-              <p className="text-sm text-text-secondary mt-1">Try adjusting filters or add a new user.</p>
+              <p className="text-lg font-semibold text-text-primary">{t('pages.admin.users.noUsers')}</p>
+              <p className="text-sm text-text-secondary mt-1">{t('pages.admin.users.tryAdjusting')}</p>
             </div>
           ) : (() => {
             const columns: ColumnDef<User>[] = [
               {
-                header: 'User',
+                header: t('pages.admin.users.user', 'User'),
                 accessorKey: 'name',
                 cell: ({ row }) => (
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full ring-1 ring-black/5 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
                       {row.original.avatar ? (
-                        <Image src={row.original.avatar} alt={row.original.name} width={40} height={40} className="rounded-full object-cover" unoptimized />
-                      ) : (
-                        <span className="text-gray-600 font-semibold">
-                          {row.original.name.charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                        <Image 
+                          src={buildImageUrl(row.original.avatar) || row.original.avatar} 
+                          alt={row.original.name} 
+                          width={40} 
+                          height={40} 
+                          className="rounded-full object-cover" 
+                          unoptimized 
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                        />
+                      ) : null}
+                      <span className={`text-gray-600 font-semibold ${row.original.avatar ? 'hidden' : ''}`}>
+                        {row.original.name?.charAt(0).toUpperCase() || 'U'}
+                      </span>
                     </div>
                     <div>
                       <p className="font-semibold text-text-primary">{row.original.name}</p>
@@ -619,7 +659,7 @@ export default function UsersPage() {
                 ),
               },
               {
-                header: 'Role',
+                header: t('pages.admin.users.role', 'Role'),
                 accessorKey: 'role',
                 cell: ({ getValue }) => (
                   <Badge variant={getValue<string>() === 'admin' ? 'destructive' : 'default'}>
@@ -628,7 +668,7 @@ export default function UsersPage() {
                 ),
               },
               {
-                header: 'Status',
+                header: t('pages.admin.users.status', 'Status'),
                 accessorKey: 'status',
                 cell: ({ getValue }) => (
                   <Badge
@@ -641,7 +681,7 @@ export default function UsersPage() {
                 ),
               },
               {
-                header: 'Contact',
+                header: t('pages.admin.users.contact', 'Contact'),
                 accessorKey: 'phone',
                 cell: ({ row }) => (
                   <div className="flex items-center gap-2 text-sm text-text-secondary">
@@ -651,14 +691,14 @@ export default function UsersPage() {
                 ),
               },
               {
-                header: 'Created',
+                header: t('pages.admin.users.created', 'Created'),
                 accessorKey: 'createdAt',
                 cell: ({ getValue }) => (
                   <span className="text-sm text-text-secondary">{getValue<string>() ? formatDate(getValue<string>()) : 'N/A'}</span>
                 ),
               },
               {
-                header: 'Actions',
+                header: t('pages.admin.users.actions', 'Actions'),
                 id: 'actions',
                 cell: ({ row }) => (
                   <div className="flex items-center gap-2">
@@ -689,6 +729,8 @@ export default function UsersPage() {
                 columns={columns}
                 data={filteredUsers}
                 searchPlaceholder="Search users..."
+                hideFirstPrevious={true}
+                hideLastNext={true}
                 getRowClassName={(u) => roleToRowClass[(u as User).role]}
               />
             );
@@ -1155,18 +1197,22 @@ export default function UsersPage() {
               <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                 {selectedUser.avatar ? (
                   <Image 
-                    src={selectedUser.avatar} 
+                    src={buildImageUrl(selectedUser.avatar) || selectedUser.avatar} 
                     alt={selectedUser.name} 
                     width={80}
                     height={80}
                     className="rounded-full object-cover"
                     unoptimized
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.nextElementSibling?.classList.remove('hidden');
+                    }}
                   />
-                ) : (
-                  <span className="text-gray-600 font-semibold text-2xl">
-                    {selectedUser.name.charAt(0).toUpperCase()}
-                  </span>
-                )}
+                ) : null}
+                <span className={`text-gray-600 font-semibold text-2xl ${selectedUser.avatar ? 'hidden' : ''}`}>
+                  {selectedUser.name?.charAt(0).toUpperCase() || 'U'}
+                </span>
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-text-primary">{selectedUser.name}</h3>

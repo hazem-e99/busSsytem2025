@@ -1,7 +1,6 @@
 'use client';
 
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { 
   Bell, 
   CheckCircle2, 
@@ -9,15 +8,17 @@ import {
   Megaphone, 
   Calendar, 
   Bus,
-  Info
+  
 } from 'lucide-react';
-import { NotificationStats, NotificationType, getNotificationTypeFromContent } from '@/types/notification';
+import { NotificationStats, NotificationType } from '@/types/notification';
+import { useI18n } from '@/contexts/LanguageContext';
 
 interface NotificationStatsProps {
   stats: NotificationStats;
 }
 
 export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
+  const { t } = useI18n();
   const getTypeIcon = (type: NotificationType) => {
     switch (type) {
       case NotificationType.Alert:
@@ -56,7 +57,7 @@ export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
       <Card className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-blue-600 font-medium">Total</p>
+            <p className="text-sm text-blue-600 font-medium">{t('pages.notifications.stats.total', 'Total')}</p>
             <p className="text-2xl font-bold text-blue-900">{stats.total}</p>
           </div>
           <Bell className="w-8 h-8 text-blue-500" />
@@ -67,7 +68,7 @@ export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
       <Card className="p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-yellow-600 font-medium">Unread</p>
+            <p className="text-sm text-yellow-600 font-medium">{t('pages.notifications.status.unread', 'Unread')}</p>
             <p className="text-2xl font-bold text-yellow-900">{stats.unread}</p>
           </div>
           <div className="w-8 h-8 bg-yellow-500 rounded-full flex items-center justify-center">
@@ -80,7 +81,7 @@ export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
       <Card className="p-4 bg-gradient-to-r from-green-50 to-green-100 border-green-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-green-600 font-medium">Read</p>
+            <p className="text-sm text-green-600 font-medium">{t('pages.notifications.status.read', 'Read')}</p>
             <p className="text-2xl font-bold text-green-900">{stats.read}</p>
           </div>
           <CheckCircle2 className="w-8 h-8 text-green-500" />
@@ -91,7 +92,7 @@ export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
       <Card className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-red-200">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-red-600 font-medium">Alerts</p>
+            <p className="text-sm text-red-600 font-medium">{t('pages.notifications.stats.alerts', 'Alerts')}</p>
             <p className="text-2xl font-bold text-red-900">
               {stats.byType[NotificationType.Alert] || 0}
             </p>
@@ -103,7 +104,7 @@ export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
       {/* Type Breakdown */}
       <div className="md:col-span-4">
         <Card className="p-4">
-          <h3 className="text-lg font-semibold mb-3 text-gray-900">Notifications by Type</h3>
+          <h3 className="text-lg font-semibold mb-3 text-gray-900">{t('pages.notifications.stats.byType', 'Notifications by Type')}</h3>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {Object.values(NotificationType).map((type) => (
               <div
@@ -113,7 +114,13 @@ export function NotificationStatsComponent({ stats }: NotificationStatsProps) {
                 <div className="flex items-center gap-2 mb-1">
                   {getTypeIcon(type)}
                   <span className="text-sm font-medium capitalize">
-                    {type.toLowerCase()}
+                    {
+                      type === NotificationType.System ? t('pages.notifications.types.system', 'System') :
+                      type === NotificationType.Alert ? t('pages.notifications.types.alert', 'Alert') :
+                      type === NotificationType.Announcement ? t('pages.notifications.types.announcement', 'Announcement') :
+                      type === NotificationType.Reminder ? t('pages.notifications.types.reminder', 'Reminder') :
+                      t('pages.notifications.types.booking', 'Booking')
+                    }
                   </span>
                 </div>
                 <p className="text-xl font-bold text-gray-900">

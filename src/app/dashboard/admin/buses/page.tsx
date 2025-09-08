@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { 
   Bus, 
   Search, 
@@ -19,7 +19,7 @@ import {
   BusFront,
   Settings
 } from 'lucide-react';
-import { busAPI, userAPI } from '@/lib/api';
+import { busAPI } from '@/lib/api';
 import { Bus as BusType, BusRequest, BusListParams } from '@/types/bus';
 import { formatDate } from '@/utils/formatDate';
 import { useToast } from '@/components/ui/Toast';
@@ -28,6 +28,7 @@ import { DataTable } from '@/components/ui/DataTable';
 import { ColumnDef } from '@tanstack/react-table';
 
 export default function BusesPage() {
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService'>('all');
   const [capacityFilter, setCapacityFilter] = useState<string>('all');
@@ -42,10 +43,8 @@ export default function BusesPage() {
     speed: 0
   });
   const [buses, setBuses] = useState<BusType[]>([]);
-  const [users, setUsers] = useState<unknown[]>([]);
-  const [routes, setRoutes] = useState<unknown[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAddingBus, setIsAddingBus] = useState(false);
+  const [, setIsAddingBus] = useState(false);
   const [addMessage, setAddMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [editMessage, setEditMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const { showToast } = useToast();
@@ -140,11 +139,7 @@ export default function BusesPage() {
         };
         
         console.log('🔍 Fetching buses with initial params:', initialParams);
-        
-        const [busesResponse, usersData] = await Promise.all([
-          busAPI.getAll(initialParams),
-          userAPI.getAll()
-        ]);
+    const busesResponse = await busAPI.getAll(initialParams);
         
         console.log('📡 Raw buses response:', busesResponse);
         
@@ -170,8 +165,6 @@ export default function BusesPage() {
         
         console.log('✨ Clean buses data:', cleanBusesData);
         setBuses(cleanBusesData);
-        setUsers(usersData);
-        // setRoutes([]); // Routes not implemented yet
         
         if (cleanBusesData.length === 0) {
           console.log('ℹ️ No buses found in the system');
@@ -182,14 +175,12 @@ export default function BusesPage() {
         console.error('Failed to fetch data:', error);
         // Set empty arrays on error to prevent crashes
         setBuses([]);
-        setUsers([]);
-        setRoutes([]);
         
         // Show error toast
         showToast({ 
           type: 'error', 
-          title: 'Failed to load buses', 
-          message: 'Please check your connection and try again.' 
+          title: t('pages.admin.buses.toast.loadFailedTitle', 'Failed to load buses'), 
+          message: t('pages.admin.buses.toast.loadFailedMsg', 'Please check your connection and try again.') 
         });
       } finally {
         setIsLoading(false);
@@ -197,7 +188,7 @@ export default function BusesPage() {
     };
 
     fetchData();
-  }, []);
+  }, [hiddenDeletedIds, showToast, t]);
 
   // Filter buses based on search and filters
   const filteredBuses = buses
@@ -445,11 +436,6 @@ export default function BusesPage() {
     }
   };
 
-  // Helper function to ensure unique keys
-  const getUniqueKey = (bus: BusType, index: number) => {
-    return `${bus.id}-${bus.busNumber}-${index}`;
-  };
-
   const getBusStats = () => {
     if (buses.length === 0) {
       return {
@@ -476,25 +462,13 @@ export default function BusesPage() {
 
   const busStats = getBusStats();
 
-  const getDriverName = (driverId?: number) => {
-    if (!driverId) return 'Not assigned';
-    const driver = users.find((u: { id: number; name?: string }) => u.id === driverId) as { id: number; name?: string } | undefined;
-    return driver ? (driver.name || 'Unknown') : 'Unknown';
-  };
-
-  const getRouteName = (routeId?: number) => {
-    if (!routeId) return 'Not assigned';
-    const route = routes.find((r: { id: number; name?: string }) => r.id === routeId) as { id: number; name?: string } | undefined;
-    return route ? (route.name || 'Unknown') : 'Unknown';
-  };
-
   if (isLoading) {
     return (
       <div className="space-y-8 p-6">
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto shadow-lg"></div>
-            <p className="mt-6 text-text-secondary text-lg font-medium">Loading buses...</p>
+            <p className="mt-6 text-text-secondary text-lg font-medium">{t('pages.admin.buses.loading', 'Loading buses...')}</p>
           </div>
         </div>
       </div>
@@ -506,12 +480,12 @@ export default function BusesPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Bus Management</h1>
-          <p className="text-gray-600">Manage fleet vehicles and their assignments</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('pages.admin.buses.title', 'Bus Management')}</h1>
+          <p className="text-gray-600">{t('pages.admin.buses.subtitle', 'Manage fleet vehicles and their assignments')}</p>
         </div>
         <Button onClick={() => setShowAddModal(true)} className="w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
-          Add New Bus
+          {t('pages.admin.buses.add', 'Add New Bus')}
         </Button>
       </div>
 
@@ -520,48 +494,48 @@ export default function BusesPage() {
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-blue-600">{busStats.total}</div>
-            <p className="text-xs text-gray-500">Total Buses</p>
+            <p className="text-xs text-gray-500">{t('pages.admin.buses.total', 'Total Buses')}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-green-600">{busStats.active}</div>
-            <p className="text-xs text-gray-500">Active</p>
+            <p className="text-xs text-gray-500">{t('pages.admin.buses.active', 'Active')}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-yellow-600">{busStats.maintenance}</div>
-            <p className="text-xs text-gray-500">Maintenance</p>
+            <p className="text-xs text-gray-500">{t('pages.admin.buses.maintenance', 'Maintenance')}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-red-600">{busStats.outOfService}</div>
-            <p className="text-xs text-gray-500">Out of Service</p>
+            <p className="text-xs text-gray-500">{t('pages.admin.buses.outOfService', 'Out of Service')}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-gray-100 shadow-sm">
           <CardContent className="p-4 sm:p-5">
             <div className="text-2xl font-bold text-purple-600">{busStats.totalCapacity}</div>
-            <p className="text-xs text-gray-500">Total Capacity</p>
+            <p className="text-xs text-gray-500">{t('pages.admin.buses.totalCapacity', 'Total Capacity')}</p>
           </CardContent>
         </Card>
         {/* Removed Avg Fuel card per request */}
       </div>
 
       {/* Filters and Search */}
-      <Card>
+  <Card>
         <CardHeader>
-          <CardTitle>Search & Filters</CardTitle>
-          <CardDescription>Find specific buses or filter by criteria</CardDescription>
+      <CardTitle>{t('pages.admin.buses.searchTitle', 'Search & Filters')}</CardTitle>
+      <CardDescription>{t('pages.admin.buses.searchSubtitle', 'Find specific buses or filter by criteria')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search buses..."
+        placeholder={t('pages.admin.buses.searchPlaceholder', 'Search buses...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -569,28 +543,28 @@ export default function BusesPage() {
             </div>
             <Select
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'Active', label: 'Active' },
-                { value: 'Inactive', label: 'Inactive' },
-                { value: 'UnderMaintenance', label: 'Under Maintenance' },
-                { value: 'OutOfService', label: 'Out of Service' },
+        { value: 'all', label: t('pages.admin.buses.filters.allStatus', 'All Status') },
+        { value: 'Active', label: t('pages.admin.buses.filters.active', 'Active') },
+        { value: 'Inactive', label: t('pages.admin.buses.filters.inactive', 'Inactive') },
+        { value: 'UnderMaintenance', label: t('pages.admin.buses.filters.underMaintenance', 'Under Maintenance') },
+        { value: 'OutOfService', label: t('pages.admin.buses.filters.outOfService', 'Out of Service') },
               ]}
               value={statusFilter}
                               onChange={(e) => setStatusFilter(e.target.value as 'all' | 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService')}
             />
             <Select
               options={[
-                { value: 'all', label: 'All Capacities' },
-                { value: 'small', label: 'Small (≤30)' },
-                { value: 'medium', label: 'Medium (31-60)' },
-                { value: 'large', label: 'Large (>60)' }
+        { value: 'all', label: t('pages.admin.buses.filters.allCapacities', 'All Capacities') },
+        { value: 'small', label: t('pages.admin.buses.filters.small', 'Small (≤30)') },
+        { value: 'medium', label: t('pages.admin.buses.filters.medium', 'Medium (31-60)') },
+        { value: 'large', label: t('pages.admin.buses.filters.large', 'Large (>60)') }
               ]}
               value={capacityFilter}
               onChange={(e) => setCapacityFilter(e.target.value)}
             />
             <Button variant="outline" className="w-full" onClick={handleApplyFilters}>
               <Filter className="w-4 h-4 mr-2" />
-              Apply Filters
+      {t('pages.admin.buses.applyFilters', 'Apply Filters')}
             </Button>
           </div>
         </CardContent>
@@ -599,25 +573,25 @@ export default function BusesPage() {
       {/* Buses Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Fleet ({buses.length} total, {filteredBuses.length} filtered)</CardTitle>
-          <CardDescription>Manage bus assignments and status</CardDescription>
+          <CardTitle>{t('pages.admin.buses.fleet', 'Fleet')} ({buses.length} {t('pages.admin.buses.totalShort', 'total')}, {filteredBuses.length} {t('pages.admin.buses.filteredShort', 'filtered')})</CardTitle>
+          <CardDescription>{t('pages.admin.buses.fleetSubtitle', 'Manage bus assignments and status')}</CardDescription>
         </CardHeader>
         <CardContent>
           {buses.length === 0 ? (
             <div className="text-center py-8">
               <Bus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No buses found</h3>
-              <p className="text-gray-500 mb-4">Get started by adding your first bus to the fleet.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">{t('pages.admin.buses.noBuses', 'No buses found')}</h3>
+              <p className="text-gray-500 mb-4">{t('pages.admin.buses.getStarted', 'Get started by adding your first bus to the fleet.')}</p>
               <Button onClick={() => setShowAddModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add First Bus
+                {t('pages.admin.buses.addFirst', 'Add First Bus')}
               </Button>
             </div>
           ) : (
             (() => {
               const columns: ColumnDef<BusType>[] = [
                 {
-                  header: 'Bus',
+                  header: t('pages.admin.buses.table.bus', 'Bus'),
                   accessorKey: 'busNumber',
                   cell: ({ row }) => (
                     <div className="flex items-center space-x-3">
@@ -625,36 +599,36 @@ export default function BusesPage() {
                         <Bus className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Bus {row.original.busNumber}</p>
-                        <p className="text-sm text-gray-500">ID: {row.original.id}</p>
+                        <p className="font-medium text-gray-900">{t('pages.admin.buses.table.bus', 'Bus')} {row.original.busNumber}</p>
+                        <p className="text-sm text-gray-500">{t('pages.admin.buses.table.id', 'ID')}: {row.original.id}</p>
                       </div>
                     </div>
                   ),
                 },
               {
-                header: 'Status',
+                header: t('pages.admin.buses.table.status', 'Status'),
                 accessorKey: 'status',
                 cell: ({ getValue }) => (
                   (() => {
                     const value = getValue<string>();
-                    const pretty = value === 'UnderMaintenance' ? 'Under Maintenance' : value === 'OutOfService' ? 'Out of Service' : value;
+                    const pretty = value === 'UnderMaintenance' ? t('pages.admin.buses.status.UnderMaintenance', 'Under Maintenance') : value === 'OutOfService' ? t('pages.admin.buses.status.OutOfService', 'Out of Service') : t(`pages.admin.buses.status.${value}`, value);
                     const variant = value === 'Active' ? 'default' : value === 'UnderMaintenance' ? 'secondary' : value === 'Inactive' ? 'secondary' : 'destructive';
                     return <Badge variant={variant}>{pretty}</Badge>;
                   })()
                 ),
               },
               {
-                header: 'Capacity',
+                header: t('pages.admin.buses.table.capacity', 'Capacity'),
                 accessorKey: 'capacity',
-                cell: ({ getValue }) => <span className="font-medium">{getValue<number>()} seats</span>,
+                cell: ({ getValue }) => <span className="font-medium">{getValue<number>()} {t('pages.admin.buses.table.seatsLabel', 'seats')}</span>,
               },
               {
-                header: 'Speed',
+                header: t('pages.admin.buses.table.speed', 'Speed'),
                 accessorKey: 'speed',
-                cell: ({ getValue }) => <span className="font-medium">{getValue<number>()} km/h</span>,
+                cell: ({ getValue }) => <span className="font-medium">{getValue<number>()} {t('pages.admin.buses.table.kmh', 'km/h')}</span>,
               },
               {
-                header: 'Actions',
+                header: t('pages.admin.buses.table.actions', 'Actions'),
                 id: 'actions',
                 cell: ({ row }) => (
                   <div className="flex items-center space-x-2">
@@ -681,7 +655,7 @@ export default function BusesPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => setConfirmState({ open: true, busId: row.original.id, message: `Delete bus ${row.original.busNumber}?` })}
+                      onClick={() => setConfirmState({ open: true, busId: row.original.id, message: `${t('pages.admin.buses.confirmDeletePrefix', 'Delete bus')} ${row.original.busNumber}?` })}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
@@ -689,7 +663,7 @@ export default function BusesPage() {
                 ),
               },
             ];
-            return <DataTable columns={columns} data={filteredBuses} searchPlaceholder="Search buses..." hideFirstPrevious />;
+            return <DataTable columns={columns} data={filteredBuses} searchPlaceholder={t('pages.admin.buses.searchPlaceholder', 'Search buses...')} hideFirstPrevious />;
           })()
         )}
         </CardContent>
@@ -699,7 +673,7 @@ export default function BusesPage() {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Add New Bus"
+        title={t('pages.admin.buses.add', 'Add New Bus')}
         size="lg"
       >
         <form onSubmit={handleAddBus} className="space-y-4">
@@ -711,31 +685,31 @@ export default function BusesPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bus Number
+                  {t('pages.admin.buses.form.busNumber', 'Bus Number')}
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Must be unique. Only letters, numbers, spaces, hyphens, and underscores allowed.
+                  {t('pages.admin.buses.form.busNumberHint', 'Must be unique. Only letters, numbers, spaces, hyphens, and underscores allowed.')}
                 </p>
                 <Input
                   value={newBus.busNumber}
                   onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
-                  placeholder="Enter bus number"
+                  placeholder={t('pages.admin.buses.form.busNumberPh', 'Enter bus number')}
                   required
                   minLength={1}
                   maxLength={20}
                   pattern="^[a-zA-Z0-9\s\-_]+$"
-                  title="Bus number can contain letters, numbers, spaces, hyphens, and underscores. Maximum 20 characters."
+                  title={t('pages.admin.buses.form.busNumberTitle', 'Bus number can contain letters, numbers, spaces, hyphens, and underscores. Maximum 20 characters.')}
                 />
               </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Capacity
+                {t('pages.admin.buses.form.capacity', 'Capacity')}
               </label>
               <Input
                 type="number"
                 value={newBus.capacity}
                 onChange={(e) => setNewBus({ ...newBus, capacity: Number(e.target.value) })}
-                placeholder="Enter capacity"
+                placeholder={t('pages.admin.buses.form.capacityPh', 'Enter capacity')}
                 min="10"
                 max="100"
                 required
@@ -746,14 +720,14 @@ export default function BusesPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                {t('pages.admin.buses.form.status', 'Status')}
               </label>
               <Select
                 options={[
-                  { value: 'Active', label: 'Active' },
-                  { value: 'Inactive', label: 'Inactive' },
-                  { value: 'UnderMaintenance', label: 'Under Maintenance' },
-                  { value: 'OutOfService', label: 'Out of Service' }
+                  { value: 'Active', label: t('pages.admin.buses.filters.active', 'Active') },
+                  { value: 'Inactive', label: t('pages.admin.buses.filters.inactive', 'Inactive') },
+                  { value: 'UnderMaintenance', label: t('pages.admin.buses.filters.underMaintenance', 'Under Maintenance') },
+                  { value: 'OutOfService', label: t('pages.admin.buses.filters.outOfService', 'Out of Service') }
                 ]}
                 value={newBus.status}
                 onChange={(e) => setNewBus({ ...newBus, status: e.target.value as 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService' })}
@@ -762,13 +736,13 @@ export default function BusesPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Speed (km/h)
+                {t('pages.admin.buses.form.speed', 'Speed (km/h)')}
               </label>
               <Input
                 type="number"
                 value={newBus.speed}
                 onChange={(e) => setNewBus({ ...newBus, speed: Number(e.target.value) })}
-                placeholder="Enter speed"
+                placeholder={t('pages.admin.buses.form.speedPh', 'Enter speed')}
                 min="0"
                 max="200"
                 required
@@ -782,10 +756,10 @@ export default function BusesPage() {
               variant="outline"
               onClick={() => setShowAddModal(false)}
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </Button>
             <Button type="submit">
-              Add Bus
+              {t('pages.admin.buses.addShort', 'Add Bus')}
             </Button>
           </div>
         </form>
@@ -795,7 +769,7 @@ export default function BusesPage() {
       <Modal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
-        title="Edit Bus"
+        title={t('pages.admin.buses.edit', 'Edit Bus')}
         size="lg"
       >
         {selectedBus && (
@@ -809,37 +783,37 @@ export default function BusesPage() {
             {/* Basic Information */}
             <div className="rounded-xl border bg-sky-50/60 p-4 space-y-4">
               <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <BusFront className="w-4 h-4 text-blue-600" /> Basic Information
+                <BusFront className="w-4 h-4 text-blue-600" /> {t('pages.admin.buses.sections.basicInfo', 'Basic Information')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Bus Number
+                    {t('pages.admin.buses.form.busNumber', 'Bus Number')}
                   </label>
                   <p className="text-xs text-gray-500 mb-2">
-                    Must be unique. Only letters, numbers, spaces, hyphens, and underscores allowed.
+                    {t('pages.admin.buses.form.busNumberHint', 'Must be unique. Only letters, numbers, spaces, hyphens, and underscores allowed.')}
                   </p>
                   <Input
                     value={selectedBus.busNumber}
                     onChange={(e) => setSelectedBus({ ...selectedBus, busNumber: e.target.value })}
-                    placeholder="e.g. A-102 or Campus_7"
+                    placeholder={t('pages.admin.buses.form.busNumberEg', 'e.g. A-102 or Campus_7')}
                     required
                     minLength={1}
                     maxLength={20}
                     pattern="^[a-zA-Z0-9\s\-_]+$"
-                    title="Bus number can contain letters, numbers, spaces, hyphens, and underscores allowed."
+                    title={t('pages.admin.buses.form.busNumberTitle', 'Bus number can contain letters, numbers, spaces, hyphens, and underscores. Maximum 20 characters.')}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Capacity
+                    {t('pages.admin.buses.form.capacity', 'Capacity')}
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">Integer between 10 and 100 seats.</p>
+                  <p className="text-xs text-gray-500 mb-2">{t('pages.admin.buses.form.capacityHint', 'Integer between 10 and 100 seats.')}</p>
                   <Input
                     type="number"
                     value={selectedBus.capacity}
                     onChange={(e) => setSelectedBus({ ...selectedBus, capacity: Number(e.target.value) })}
-                    placeholder="e.g. 50"
+                    placeholder={t('pages.admin.buses.form.capacityEg', 'e.g. 50')}
                     min="10"
                     max="100"
                     required
@@ -851,20 +825,20 @@ export default function BusesPage() {
             {/* Status & Performance */}
             <div className="rounded-xl border bg-emerald-50/60 p-4 space-y-4">
               <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Settings className="w-4 h-4 text-emerald-700" /> Status & Performance
+                <Settings className="w-4 h-4 text-emerald-700" /> {t('pages.admin.buses.sections.statusPerformance', 'Status & Performance')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Status
+                    {t('pages.admin.buses.form.status', 'Status')}
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">Current operational state of the bus.</p>
+                  <p className="text-xs text-gray-500 mb-2">{t('pages.admin.buses.form.statusHint', 'Current operational state of the bus.')}</p>
                   <Select
                     options={[
-                      { value: 'Active', label: 'Active' },
-                      { value: 'Inactive', label: 'Inactive' },
-                      { value: 'UnderMaintenance', label: 'Under Maintenance' },
-                      { value: 'OutOfService', label: 'Out of Service' }
+                      { value: 'Active', label: t('pages.admin.buses.filters.active', 'Active') },
+                      { value: 'Inactive', label: t('pages.admin.buses.filters.inactive', 'Inactive') },
+                      { value: 'UnderMaintenance', label: t('pages.admin.buses.filters.underMaintenance', 'Under Maintenance') },
+                      { value: 'OutOfService', label: t('pages.admin.buses.filters.outOfService', 'Out of Service') }
                     ]}
                     value={selectedBus.status}
                     onChange={(e) => setSelectedBus({ ...selectedBus, status: e.target.value as 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService' })}
@@ -878,20 +852,20 @@ export default function BusesPage() {
                         selectedBus.status === 'Inactive' ? 'secondary' : 'destructive'
                       }
                     >
-                      {selectedBus.status === 'UnderMaintenance' ? 'Under Maintenance' : selectedBus.status === 'OutOfService' ? 'Out of Service' : selectedBus.status}
+                      {selectedBus.status === 'UnderMaintenance' ? t('pages.admin.buses.status.UnderMaintenance', 'Under Maintenance') : selectedBus.status === 'OutOfService' ? t('pages.admin.buses.status.OutOfService', 'Out of Service') : t(`pages.admin.buses.status.${selectedBus.status}`, selectedBus.status)}
                     </Badge>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Speed (km/h)
+                    {t('pages.admin.buses.form.speed', 'Speed (km/h)')}
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">Recommended range 0–200 km/h.</p>
+                  <p className="text-xs text-gray-500 mb-2">{t('pages.admin.buses.form.speedHint', 'Recommended range 0–200 km/h.')}</p>
                   <Input
                     type="number"
                     value={selectedBus.speed}
                     onChange={(e) => setSelectedBus({ ...selectedBus, speed: Number(e.target.value) })}
-                    placeholder="e.g. 80"
+                    placeholder={t('pages.admin.buses.form.speedEg', 'e.g. 80')}
                     min="0"
                     max="200"
                     required
@@ -906,10 +880,10 @@ export default function BusesPage() {
                 variant="outline"
                 onClick={() => setShowEditModal(false)}
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </Button>
               <Button type="submit">
-                Update Bus
+                {t('pages.admin.buses.update', 'Update Bus')}
               </Button>
             </div>
           </form>
@@ -920,7 +894,7 @@ export default function BusesPage() {
       <Modal
         isOpen={showViewModal}
         onClose={() => setShowViewModal(false)}
-        title="Bus Details"
+        title={t('pages.admin.buses.details', 'Bus Details')}
         size="md"
       >
         {selectedBus && (
@@ -936,8 +910,8 @@ export default function BusesPage() {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-semibold">Bus {selectedBus.busNumber ?? '—'}</h3>
-                    <p className="text-sm text-gray-500">ID: <span className="font-medium text-gray-700">{selectedBus.id ?? 'N/A'}</span></p>
+                    <h3 className="text-xl font-semibold">{t('pages.admin.buses.table.bus', 'Bus')} {selectedBus.busNumber ?? '—'}</h3>
+                    <p className="text-sm text-gray-500">{t('pages.admin.buses.table.id', 'ID')}: <span className="font-medium text-gray-700">{selectedBus.id ?? 'N/A'}</span></p>
                   </div>
 
                   <div>
@@ -948,25 +922,25 @@ export default function BusesPage() {
                         selectedBus.status === 'Inactive' ? 'secondary' : 'destructive'
                       }
                     >
-                      {selectedBus.status ? (selectedBus.status === 'UnderMaintenance' ? 'Under Maintenance' : selectedBus.status === 'OutOfService' ? 'Out of Service' : selectedBus.status) : 'Unknown'}
+                      {selectedBus.status ? (selectedBus.status === 'UnderMaintenance' ? t('pages.admin.buses.status.UnderMaintenance', 'Under Maintenance') : selectedBus.status === 'OutOfService' ? t('pages.admin.buses.status.OutOfService', 'Out of Service') : t(`pages.admin.buses.status.${selectedBus.status}`, selectedBus.status)) : t('pages.admin.buses.unknown', 'Unknown')}
                     </Badge>
                   </div>
                 </div>
 
-                <p className="mt-2 text-sm text-gray-600">A quick overview of the vehicle status and recent telemetry.</p>
+                <p className="mt-2 text-sm text-gray-600">{t('pages.admin.buses.overview', 'A quick overview of the vehicle status and recent telemetry.')}</p>
               </div>
             </div>
 
             {/* Stats grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-3 bg-gradient-to-br from-white to-slate-50 rounded-lg shadow-sm">
-                <p className="text-xs text-gray-400">Capacity</p>
-                <div className="mt-1 text-lg font-semibold text-gray-800">{selectedBus.capacity ?? 'N/A'} seats</div>
+                <p className="text-xs text-gray-400">{t('pages.admin.buses.table.capacity', 'Capacity')}</p>
+                <div className="mt-1 text-lg font-semibold text-gray-800">{selectedBus.capacity ?? 'N/A'} {t('pages.admin.buses.table.seatsLabel', 'seats')}</div>
               </div>
 
               <div className="p-3 bg-gradient-to-br from-white to-slate-50 rounded-lg shadow-sm">
-                <p className="text-xs text-gray-400">Speed</p>
-                <div className="mt-1 text-lg font-semibold text-gray-800">{selectedBus.speed != null ? `${selectedBus.speed} km/h` : 'N/A'}</div>
+                <p className="text-xs text-gray-400">{t('pages.admin.buses.table.speed', 'Speed')}</p>
+                <div className="mt-1 text-lg font-semibold text-gray-800">{selectedBus.speed != null ? `${selectedBus.speed} ${t('pages.admin.buses.table.kmh', 'km/h')}` : 'N/A'}</div>
               </div>
 
               {/* Removed Fuel Level section per request */}
@@ -979,25 +953,25 @@ export default function BusesPage() {
             ) && (
               <div className="flex items-center justify-between text-sm text-gray-500">
                 {selectedBus.updatedAt && (
-                  <div>Last updated: <span className="text-gray-700 font-medium">{formatDate(selectedBus.updatedAt)}</span></div>
+                  <div>{t('pages.admin.buses.lastUpdated', 'Last updated')}: <span className="text-gray-700 font-medium">{formatDate(selectedBus.updatedAt)}</span></div>
                 )}
                 {selectedBus.location && selectedBus.location.lat != null && selectedBus.location.lng != null && (Number(selectedBus.location.lat) !== 0 || Number(selectedBus.location.lng) !== 0) && (
-                  <div>Location: <span className="text-gray-700 font-medium">{`${String(selectedBus.location.lat).slice(0,10)}, ${String(selectedBus.location.lng).slice(0,10)}`}</span></div>
+                  <div>{t('pages.admin.buses.location', 'Location')}: <span className="text-gray-700 font-medium">{`${String(selectedBus.location.lat).slice(0,10)}, ${String(selectedBus.location.lng).slice(0,10)}`}</span></div>
                 )}
               </div>
             )}
 
             {/* Actions */}
             <div className="flex justify-end space-x-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => setShowViewModal(false)}>Close</Button>
-              <Button type="button" onClick={() => { setShowEditModal(true); setShowViewModal(false); }}>Edit Bus</Button>
+              <Button type="button" variant="outline" onClick={() => setShowViewModal(false)}>{t('common.close', 'Close')}</Button>
+              <Button type="button" onClick={() => { setShowEditModal(true); setShowViewModal(false); }}>{t('pages.admin.buses.edit', 'Edit Bus')}</Button>
             </div>
           </div>
         )}
       </Modal>
       <ConfirmDialog
         open={confirmState.open}
-        title="Delete bus?"
+        title={t('pages.admin.buses.confirmDeleteTitle', 'Delete bus?')}
         description={confirmState.message}
         onCancel={() => setConfirmState({ open: false })}
         onConfirm={handleDeleteConfirmed}

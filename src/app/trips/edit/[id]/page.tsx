@@ -8,11 +8,12 @@ import tripService from '@/services/tripService';
 import { busAPI, userAPI } from '@/lib/api';
 import { getApiConfig } from '@/lib/config';
 import { useParams, useRouter } from 'next/navigation';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/Toast';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { ArrowLeft, BusFront, User as UserIcon, Calendar, Clock, Route, MapPin, Plus, Trash2, Save } from 'lucide-react';
+import { ArrowLeft, BusFront, User as UserIcon, Calendar, Route, MapPin, Plus, Trash2, Save } from 'lucide-react';
+import { useI18n } from '@/contexts/LanguageContext';
 
 // Define interfaces
 interface User {
@@ -42,33 +43,50 @@ interface TripData {
   }>;
 }
 
-const stopSchema = z.object({
-  address: z.string().min(1, 'Address is required').max(300, 'Max 300 characters'),
-  arrivalTimeOnly: z.string().min(1, 'Arrival time is required'),
-  departureTimeOnly: z.string().min(1, 'Departure time is required'),
-});
-
-const updateTripSchema = z.object({
-  busId: z.string().optional(),
-  driverId: z.string().optional(),
-  conductorId: z.string().optional(),
-  startLocation: z.string().max(200, 'Max 200 characters').optional(),
-  endLocation: z.string().max(200, 'Max 200 characters').optional(),
-  tripDate: z.string().optional(),
-  departureTimeOnly: z.string().optional(),
-  arrivalTimeOnly: z.string().optional(),
-  stopLocations: z.array(stopSchema).optional(),
-});
-
-type UpdateTripForm = z.infer<typeof updateTripSchema>;
+type UpdateTripForm = {
+  busId?: string;
+  driverId?: string;
+  conductorId?: string;
+  startLocation?: string;
+  endLocation?: string;
+  tripDate?: string;
+  departureTimeOnly?: string;
+  arrivalTimeOnly?: string;
+  stopLocations?: Array<{
+    address: string;
+    arrivalTimeOnly: string;
+    departureTimeOnly: string;
+  }>;
+};
 
 export default function EditTripPage() {
+  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
-  const { toast } = useToast();
-  const form = useForm<UpdateTripForm>({ 
-    resolver: zodResolver(updateTripSchema), 
-    defaultValues: { 
+  const { showToast } = useToast();
+  // Build localized validation schemas
+  const stopSchema = z.object({
+    address: z.string()
+      .min(1, t('pages.admin.trips.form.errors.requiredAddress', 'Address is required'))
+      .max(300, t('pages.admin.trips.form.errors.maxChars', 'Max 300 characters')),
+    arrivalTimeOnly: z.string().min(1, t('pages.admin.trips.form.errors.requiredArrival', 'Arrival time is required')),
+    departureTimeOnly: z.string().min(1, t('pages.admin.trips.form.errors.requiredDeparture', 'Departure time is required')),
+  });
+  const updateTripSchema = z.object({
+    busId: z.string().optional(),
+    driverId: z.string().optional(),
+    conductorId: z.string().optional(),
+    startLocation: z.string().max(200, t('pages.admin.trips.form.errors.max200', 'Must be at most 200 characters')).optional(),
+    endLocation: z.string().max(200, t('pages.admin.trips.form.errors.max200', 'Must be at most 200 characters')).optional(),
+    tripDate: z.string().optional(),
+    departureTimeOnly: z.string().optional(),
+    arrivalTimeOnly: z.string().optional(),
+    stopLocations: z.array(stopSchema).optional(),
+  });
+
+  const form = useForm<UpdateTripForm>({
+    resolver: zodResolver(updateTripSchema),
+    defaultValues: {
       stopLocations: [],
       busId: '',
       driverId: '',
@@ -78,7 +96,7 @@ export default function EditTripPage() {
       tripDate: '',
       departureTimeOnly: '',
       arrivalTimeOnly: ''
-    } 
+    }
   });
   const { fields, append, remove, replace } = useFieldArray({ control: form.control, name: 'stopLocations' as const });
   const [loadingLookups, setLoadingLookups] = useState<boolean>(true);
@@ -206,10 +224,20 @@ export default function EditTripPage() {
 
       // success
       console.log('Trip updated successfully');
+      showToast({
+        type: 'success',
+        title: t('pages.admin.trips.toasts.savedTitle', 'Trip Saved'),
+        message: t('pages.admin.trips.toasts.savedMsg', 'Trip details saved successfully')
+      });
       router.push('/trips');
     } catch (e: unknown) {
       const errorMessage = e instanceof Error ? e.message : String(e);
       console.error('Update failed:', errorMessage);
+      showToast({
+        type: 'error',
+        title: t('pages.admin.trips.toasts.errorTitle', 'Error'),
+        message: errorMessage
+      });
     }
   };
 
@@ -225,11 +253,11 @@ export default function EditTripPage() {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Trips
+              {t('common.back', 'Back')}
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-text-primary tracking-tight">Edit Trip</h1>
-              <p className="text-text-secondary mt-1">Update trip details and schedule</p>
+              <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('pages.admin.trips.form.titleEdit', 'Edit Trip')}</h1>
+              <p className="text-text-secondary mt-1">{t('pages.admin.trips.form.subtitle', 'Plan route, assign bus and staff, and set schedule')}</p>
             </div>
           </div>
         </div>
@@ -237,21 +265,21 @@ export default function EditTripPage() {
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <BusFront className="w-5 h-5 text-indigo-600" />
             <div>
-              <p className="text-sm text-text-secondary">Trip ID</p>
+              <p className="text-sm text-text-secondary">{t('pages.movementManager.trips.details.tripId', 'Trip ID')}</p>
               <p className="font-semibold">#{tripId}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <UserIcon className="w-5 h-5 text-purple-600" />
             <div>
-              <p className="text-sm text-text-secondary">Drivers</p>
+              <p className="text-sm text-text-secondary">{t('pages.admin.trips.form.stats.drivers', 'Drivers')}</p>
               <p className="font-semibold">{loadingLookups ? '—' : drivers.length}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <UserIcon className="w-5 h-5 text-blue-600" />
             <div>
-              <p className="text-sm text-text-secondary">Conductors</p>
+              <p className="text-sm text-text-secondary">{t('pages.admin.trips.form.stats.conductors', 'Conductors')}</p>
               <p className="font-semibold">{loadingLookups ? '—' : conductors.length}</p>
             </div>
           </div>
@@ -262,23 +290,23 @@ export default function EditTripPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Assignment */}
         <Card className="xl:col-span-2 rounded-xl border bg-sky-50/60 p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><BusFront className="w-5 h-5" /> Assignment</h3>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><BusFront className="w-5 h-5" /> {t('pages.admin.trips.form.sections.assignment', 'Assignment')}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium">Bus</label>
+              <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.bus', 'Bus')}</label>
               <select {...form.register('busId')} className="mt-1 w-full border rounded px-3 py-2 bg-white">
-                  <option value="">{loadingLookups ? 'Loading...' : 'Select a bus'}</option>
+                  <option value="">{loadingLookups ? t('common.loading', 'Loading...') : t('pages.admin.trips.form.placeholders.selectBus', 'Select a bus')}</option>
                   {buses.map((b) => {
-                    const label = `${b.busNumber ? b.busNumber : 'Bus'} (ID: ${b.id})`;
+                    const label = `${b.busNumber ? b.busNumber : t('pages.admin.trips.form.fields.bus', 'Bus')} (ID: ${b.id})`;
                     return <option key={b.id} value={b.id}>{label}</option>;
                   })}
                 </select>
               {form.formState.errors.busId && <p className="text-red-600 text-sm">{form.formState.errors.busId.message as string}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium">Driver</label>
+              <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.driver', 'Driver')}</label>
               <select {...form.register('driverId')} className="mt-1 w-full border rounded px-3 py-2 bg-white">
-                <option value="">{loadingLookups ? 'Loading...' : 'Select a driver'}</option>
+                <option value="">{loadingLookups ? t('common.loading', 'Loading...') : t('pages.admin.trips.form.placeholders.selectDriver', 'Select a driver')}</option>
                 {drivers.map((u) => {
                   const name = u.fullName || u.name || u.email || `User`;
                   const label = `${name} (ID: ${u.id})`;
@@ -288,9 +316,9 @@ export default function EditTripPage() {
               {form.formState.errors.driverId && <p className="text-red-600 text-sm">{form.formState.errors.driverId.message as string}</p>}
             </div>
             <div>
-              <label className="block text-sm font-medium">Conductor</label>
+              <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.conductor', 'Conductor')}</label>
               <select {...form.register('conductorId')} className="mt-1 w-full border rounded px-3 py-2 bg-white">
-                <option value="">{loadingLookups ? 'Loading...' : 'Select a conductor'}</option>
+                <option value="">{loadingLookups ? t('common.loading', 'Loading...') : t('pages.admin.trips.form.placeholders.selectConductor', 'Select a conductor')}</option>
                 {conductors.map((u) => {
                   const name = u.fullName || u.name || u.email || `User`;
                   const label = `${name} (ID: ${u.id})`;
@@ -304,21 +332,21 @@ export default function EditTripPage() {
 
         {/* Schedule */}
         <Card className="rounded-xl border bg-emerald-50/60 p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" /> Schedule</h3>
+          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" /> {t('pages.admin.trips.form.sections.schedule', 'Schedule')}</h3>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium">Trip Date</label>
+              <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.tripDate', 'Trip Date')}</label>
               <Input type="date" {...form.register('tripDate')} />
               {form.formState.errors.tripDate && <p className="text-red-600 text-sm">{form.formState.errors.tripDate.message as string}</p>}
             </div>
             <div className="grid grid-cols-2 gap-4">
             <div>
-                <label className="block text-sm font-medium">Departure</label>
+                <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.departure', 'Departure')}</label>
               <Input type="time" {...form.register('departureTimeOnly')} />
               {form.formState.errors.departureTimeOnly && <p className="text-red-600 text-sm">{form.formState.errors.departureTimeOnly.message as string}</p>}
             </div>
             <div>
-                <label className="block text-sm font-medium">Arrival</label>
+                <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.arrival', 'Arrival')}</label>
               <Input type="time" {...form.register('arrivalTimeOnly')} />
               {form.formState.errors.arrivalTimeOnly && <p className="text-red-600 text-sm">{form.formState.errors.arrivalTimeOnly.message as string}</p>}
             </div>
@@ -329,15 +357,15 @@ export default function EditTripPage() {
 
       {/* Route */}
       <Card className="rounded-xl border bg-white p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Route className="w-5 h-5" /> Route</h3>
+    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2"><Route className="w-5 h-5" /> {t('pages.admin.trips.form.sections.route', 'Route')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium">Start Location</label>
+      <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.startLocation', 'Start Location')}</label>
             <Input type="text" {...form.register('startLocation')} />
             {form.formState.errors.startLocation && <p className="text-red-600 text-sm">{form.formState.errors.startLocation.message as string}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium">End Location</label>
+      <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.endLocation', 'End Location')}</label>
             <Input type="text" {...form.register('endLocation')} />
             {form.formState.errors.endLocation && <p className="text-red-600 text-sm">{form.formState.errors.endLocation.message as string}</p>}
           </div>
@@ -347,33 +375,33 @@ export default function EditTripPage() {
       {/* Stops */}
       <Card className="rounded-xl border bg-white p-6">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold flex items-center gap-2"><MapPin className="w-5 h-5" /> Stop Locations</h3>
-          <Button type="button" variant="secondary" onClick={() => append({ address: '', arrivalTimeOnly: '', departureTimeOnly: '' })}><Plus className="w-4 h-4 mr-1" /> Add Stop</Button>
+          <h3 className="text-lg font-semibold flex items-center gap-2"><MapPin className="w-5 h-5" /> {t('pages.admin.trips.form.sections.stops', 'Stop Locations')}</h3>
+          <Button type="button" variant="secondary" onClick={() => append({ address: '', arrivalTimeOnly: '', departureTimeOnly: '' })}><Plus className="w-4 h-4 mr-1" /> {t('pages.admin.trips.form.actions.addStop', 'Add Stop')}</Button>
             </div>
         {fields.length === 0 && (
-          <div className="text-sm text-text-secondary">No stops added yet.</div>
+          <div className="text-sm text-text-secondary">{t('pages.admin.trips.form.empty.noStops', 'No stops added yet.')}</div>
         )}
         <div className="space-y-4">
             {fields.map((field, index) => (
             <Card key={field.id} className="p-4 border bg-slate-50/60">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium">Address</label>
+                    <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.stopAddress', 'Address')}</label>
                     <Input type="text" {...form.register(`stopLocations.${index}.address` as const)} />
                     {form.formState.errors.stopLocations?.[index]?.address && <p className="text-red-600 text-sm">{form.formState.errors.stopLocations?.[index]?.address?.message as string}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium">Arrival</label>
+                    <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.stopArrival', 'Arrival')}</label>
                     <Input type="time" {...form.register(`stopLocations.${index}.arrivalTimeOnly` as const)} />
                     {form.formState.errors.stopLocations?.[index]?.arrivalTimeOnly && <p className="text-red-600 text-sm">{form.formState.errors.stopLocations?.[index]?.arrivalTimeOnly?.message as string}</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium">Departure</label>
+                    <label className="block text-sm font-medium">{t('pages.admin.trips.form.fields.stopDeparture', 'Departure')}</label>
                     <Input type="time" {...form.register(`stopLocations.${index}.departureTimeOnly` as const)} />
                     {form.formState.errors.stopLocations?.[index]?.departureTimeOnly && <p className="text-red-600 text-sm">{form.formState.errors.stopLocations?.[index]?.departureTimeOnly?.message as string}</p>}
                   </div>
                   <div className="md:col-span-4 flex justify-end">
-                  <Button type="button" variant="destructive" onClick={() => remove(index)}><Trash2 className="w-4 h-4 mr-1" /> Remove</Button>
+                  <Button type="button" variant="destructive" onClick={() => remove(index)}><Trash2 className="w-4 h-4 mr-1" /> {t('pages.admin.trips.form.actions.remove', 'Remove')}</Button>
                   </div>
                 </div>
               </Card>
@@ -384,9 +412,9 @@ export default function EditTripPage() {
           <div className="flex gap-2">
         <Button type="submit" onClick={form.handleSubmit(onSubmit as any)} className="flex items-center gap-2">
           <Save className="w-4 h-4" />
-          Save Changes
+          {t('pages.admin.trips.form.actions.save', 'Save')}
         </Button>
-            <Button type="button" variant="secondary" onClick={() => history.back()}>Cancel</Button>
+            <Button type="button" variant="secondary" onClick={() => history.back()}>{t('common.cancel', 'Cancel')}</Button>
           </div>
     </div>
   );

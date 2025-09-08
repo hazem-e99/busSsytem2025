@@ -10,11 +10,14 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { MapPin, Clock, Calendar, Users, Bus, ArrowLeft, Edit, Route, Gauge, User, Activity } from 'lucide-react';
+import { MapPin, Clock, Calendar, Users, Bus, ArrowLeft, Edit, Route } from 'lucide-react';
+import { useI18n } from '@/contexts/LanguageContext';
+import { formatDate as formatWithLocale } from '@/lib/format';
 
 export default function TripDetailsPage() {
   const params = useParams();
   const { toast } = useToast();
+  const { t, lang } = useI18n();
   const [trip, setTrip] = useState<TripViewModel | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -46,16 +49,44 @@ export default function TripDetailsPage() {
     }
   };
 
+  const statusText = (status: string) => {
+    const s = (status || '').toLowerCase();
+    if (s === 'scheduled') return t('common.status.scheduled', 'Scheduled');
+    if (s === 'inprogress' || s === 'in-progress') return t('common.status.inProgress', 'In Progress');
+    if (s === 'completed') return t('common.status.completed', 'Completed');
+    if (s === 'cancelled') return t('common.status.cancelled', 'Cancelled');
+    if (s === 'delayed') return t('common.status.delayed', 'Delayed');
+    return status;
+  };
+
+  const formatTime = (value?: string) => {
+    if (!value) return '—';
+    const [hh, mm] = value.split(':').map(Number);
+    const d = new Date();
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) return value;
+    d.setHours(hh || 0, mm || 0, 0, 0);
+    return formatWithLocale(lang, d, { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatDate = (value?: string) => {
+    if (!value) return '—';
+    try {
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      return formatWithLocale(lang, d, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch { return value!; }
+  };
+
   if (loading) return <TripDetailsSkeleton />;
   if (!trip) return (
     <div className="p-6 max-w-4xl mx-auto">
       <Card className="p-6 text-center">
-        <h1 className="text-2xl font-semibold mb-4">Trip not found</h1>
-        <p className="text-gray-600 mb-6">The trip you&apos;re looking for doesn&apos;t exist or may have been removed.</p>
+        <h1 className="text-2xl font-semibold mb-4">{t('pages.movementManager.trips.notFound.title', 'Trip not found')}</h1>
+        <p className="text-gray-600 mb-6">{t('pages.movementManager.trips.notFound.message', "The trip you're looking for doesn't exist or may have been removed.")}</p>
         <Link href="/trips">
           <Button variant="outline">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to trips
+            {t('common.back', 'Back')}
           </Button>
         </Link>
       </Card>
@@ -74,19 +105,19 @@ export default function TripDetailsPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-3xl font-bold text-text-primary tracking-tight">Trip #{trip.id}</h1>
+              <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('pages.movementManager.trips.details.trip', 'Trip')} #{trip.id}</h1>
               <div className="flex items-center gap-2 mt-1">
                 <Badge className={getStatusColor(trip.status)}>
-                  {trip.status}
+                  {statusText(trip.status)}
                 </Badge>
-                <span className="text-sm text-text-secondary">• ID: {trip.id}</span>
+                <span className="text-sm text-text-secondary">• {t('pages.movementManager.trips.details.tripId', 'Trip ID')}: {trip.id}</span>
               </div>
             </div>
           </div>
           <Link href={`/trips/edit/${trip.id}`}>
             <Button className="gap-2">
               <Edit className="h-4 w-4" />
-              Edit Trip
+              {t('pages.movementManager.trips.actions.edit', 'Edit Trip')}
             </Button>
           </Link>
         </div>
@@ -94,29 +125,29 @@ export default function TripDetailsPage() {
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Bus className="w-5 h-5 text-blue-600" />
             <div>
-              <p className="text-sm text-text-secondary">Bus ID</p>
+              <p className="text-sm text-text-secondary">{t('pages.movementManager.trips.summary.busId', 'Bus ID')}</p>
               <p className="font-semibold">{trip.busId}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Users className="w-5 h-5 text-green-600" />
             <div>
-              <p className="text-sm text-text-secondary">Available Seats</p>
+              <p className="text-sm text-text-secondary">{t('pages.movementManager.trips.summary.availableSeats', 'Available Seats')}</p>
               <p className="font-semibold">{trip.avalableSeates}/{trip.totalSeats}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Calendar className="w-5 h-5 text-purple-600" />
             <div>
-              <p className="text-sm text-text-secondary">Date</p>
-              <p className="font-semibold">{new Date(trip.tripDate).toLocaleDateString()}</p>
+              <p className="text-sm text-text-secondary">{t('pages.movementManager.trips.filters.date', 'Date')}</p>
+              <p className="font-semibold">{formatDate(trip.tripDate)}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Clock className="w-5 h-5 text-orange-600" />
             <div>
-              <p className="text-sm text-text-secondary">Duration</p>
-              <p className="font-semibold">{trip.departureTimeOnly} - {trip.arrivalTimeOnly}</p>
+              <p className="text-sm text-text-secondary">{t('pages.movementManager.trips.summary.duration', 'Duration')}</p>
+              <p className="font-semibold">{formatTime(trip.departureTimeOnly)} - {formatTime(trip.arrivalTimeOnly)}</p>
             </div>
           </div>
         </div>
@@ -129,15 +160,15 @@ export default function TripDetailsPage() {
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Route className="w-5 h-5" />
-              Trip Details
+              {t('pages.movementManager.trips.details.title', 'Trip Details')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DetailItem label="Driver ID" value={trip.driverId} />
-              <DetailItem label="Conductor ID" value={trip.conductorId} />
-              <DetailItem label="Departure Time" value={trip.departureTimeOnly} />
-              <DetailItem label="Arrival Time" value={trip.arrivalTimeOnly} />
-              <DetailItem label="Total Seats" value={trip.totalSeats} />
-              <DetailItem label="Booked Seats" value={trip.bookedSeats} />
+              <DetailItem label={t('pages.driver.myTrips.labels.driverId', 'Driver ID')} value={trip.driverId} />
+              <DetailItem label={t('pages.driver.myTrips.labels.conductorId', 'Conductor ID')} value={trip.conductorId} />
+              <DetailItem label={t('pages.movementManager.trips.details.departureTime', 'Departure Time')} value={formatTime(trip.departureTimeOnly)} />
+              <DetailItem label={t('pages.movementManager.trips.details.arrivalTime', 'Arrival Time')} value={formatTime(trip.arrivalTimeOnly)} />
+              <DetailItem label={t('pages.driver.myTrips.labels.totalSeats', 'Total Seats')} value={trip.totalSeats} />
+              <DetailItem label={t('pages.driver.myTrips.labels.booked', 'Booked')} value={trip.bookedSeats} />
             </div>
           </div>
         </Card>
@@ -147,20 +178,20 @@ export default function TripDetailsPage() {
           <div className="p-6">
             <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Route Information
+              {t('pages.movementManager.trips.details.routeInformation', 'Route Information')}
             </h2>
             <div className="space-y-4">
               <div className="p-4 bg-white/70 rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="font-medium">Start Location</span>
+                  <span className="font-medium">{t('pages.admin.trips.form.fields.startLocation', 'Start Location')}</span>
                 </div>
                 <p className="text-gray-700 ml-6">{trip.startLocation}</p>
               </div>
               <div className="p-4 bg-white/70 rounded-lg">
                 <div className="flex items-center gap-3 mb-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="font-medium">End Location</span>
+                  <span className="font-medium">{t('pages.admin.trips.form.fields.endLocation', 'End Location')}</span>
                 </div>
                 <p className="text-gray-700 ml-6">{trip.endLocation}</p>
               </div>
@@ -175,10 +206,10 @@ export default function TripDetailsPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <MapPin className="w-5 h-5" />
-              Stop Locations
+              {t('pages.movementManager.trips.stopLocations.title', 'Stop Locations')}
             </h2>
             <Badge variant="outline">
-              {trip.stopLocations?.length || 0} stops
+              {trip.stopLocations?.length || 0} {t('pages.movementManager.trips.stopLocations.stops', 'stops')}
             </Badge>
           </div>
           
@@ -199,11 +230,11 @@ export default function TripDetailsPage() {
                     <div className="flex flex-wrap gap-4 mt-2 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        Arrival: {stop.arrivalTimeOnly}
+                        {t('pages.admin.trips.form.stopArrival', 'Arrival')}: {formatTime(stop.arrivalTimeOnly)}
                       </span>
                       <span className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />
-                        Departure: {stop.departureTimeOnly}
+                        {t('pages.admin.trips.form.stopDeparture', 'Departure')}: {formatTime(stop.departureTimeOnly)}
                       </span>
                     </div>
                   </div>
@@ -213,7 +244,7 @@ export default function TripDetailsPage() {
           ) : (
             <div className="text-center py-8 text-gray-500">
               <MapPin className="h-12 w-12 mx-auto mb-3 opacity-50" />
-              <p>No stops scheduled for this trip</p>
+              <p>{t('pages.admin.trips.form.empty.noStops', 'No stops added yet.')}</p>
             </div>
           )}
         </div>

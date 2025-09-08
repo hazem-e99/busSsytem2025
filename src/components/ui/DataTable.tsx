@@ -21,10 +21,11 @@ export interface DataTableProps<TData, TValue> {
   data: TData[];
   searchPlaceholder?: string;
   hideFirstPrevious?: boolean;
+  hideLastNext?: boolean;
   getRowClassName?: (row: TData) => string | undefined;
 }
 
-export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'Search...', hideFirstPrevious = false, getRowClassName }: DataTableProps<TData, TValue>) {
+export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'Search...', hideFirstPrevious = false, hideLastNext = false, getRowClassName }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState('');
 
@@ -113,21 +114,21 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'S
         </div>
         <div className="flex items-center gap-2">
           {!hideFirstPrevious && (
-            <>
-              <Button variant="outline" size="sm" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
-                First
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
-                Previous
-              </Button>
-            </>
+            <Button variant="outline" size="sm" onClick={() => table.setPageIndex(0)} disabled={!table.getCanPreviousPage()}>
+              First
+            </Button>
           )}
+          <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
+            Previous
+          </Button>
           <Button variant="outline" size="sm" onClick={() => table.nextPage()} disabled={!table.getCanNextPage()}>
             Next
           </Button>
-          <Button variant="outline" size="sm" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
-            Last
-          </Button>
+          {!hideLastNext && (
+            <Button variant="outline" size="sm" onClick={() => table.setPageIndex(table.getPageCount() - 1)} disabled={!table.getCanNextPage()}>
+              Last
+            </Button>
+          )}
         </div>
       </div>
     </div>

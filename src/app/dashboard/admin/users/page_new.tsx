@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -79,6 +80,26 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   
+  // Build image URL helper
+  const buildImageUrl = (imagePath: string | undefined): string | undefined => {
+    if (!imagePath) return undefined;
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
+    }
+    
+    // If it's a relative path, build full URL
+    if (imagePath.startsWith('/')) {
+      if (imagePath.startsWith('/uploads')) {
+        return `https://api.el-renad.com${imagePath}`;
+      }
+      return `https://api.el-renad.com/api${imagePath}`;
+    }
+    
+    // If it's just a filename, assume it's in uploads folder
+    return `https://api.el-renad.com/uploads/${imagePath}`;
+  };
 
   // Fetch users from Global API (server-side role filter)
   useEffect(() => {
@@ -138,8 +159,11 @@ export default function UsersPage() {
             updatedAt: new Date().toISOString(),
           })) as User[];
           
+          // Filter out students from allUsers to avoid duplication
+          const nonStudentUsers = allUsers.filter((user: any) => user.role !== 'student');
+          
           // Map staff users to ensure proper typing
-          const mappedStaff = allUsers.map((user: any) => ({
+          const mappedStaff = nonStudentUsers.map((user: any) => ({
             ...user,
             role: user.role as UserRole
           })) as User[];
@@ -543,14 +567,26 @@ export default function UsersPage() {
                 accessorKey: 'name',
                 cell: ({ row }) => (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full ring-1 ring-black/5 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="w-10 h-10 rounded-full ring-1 ring-black/5 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden shadow-sm relative">
                       {row.original.avatar ? (
-                        <img src={row.original.avatar} alt={row.original.name || 'User'} className="w-10 h-10 rounded-full object-cover" />
-                      ) : (
-                        <span className="text-gray-600 font-semibold">
-                          {(row.original.name || 'U').charAt(0).toUpperCase()}
-                        </span>
-                      )}
+                        <Image
+                          src={buildImageUrl(row.original.avatar) || row.original.avatar}
+                          alt={row.original.name || 'User'}
+                          fill
+                          sizes="40px"
+                          className="rounded-full object-cover"
+                          onError={(e) => {
+                            const parent = (e.target as HTMLImageElement).parentElement;
+                            if (parent) {
+                              const fallback = parent.querySelector('span');
+                              if (fallback) fallback.classList.remove('hidden');
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <span className={`text-gray-600 font-semibold ${row.original.avatar ? 'hidden' : ''}`}>
+                        {(row.original.name || 'U').charAt(0).toUpperCase()}
+                      </span>
                     </div>
                     <div>
                       <p className="font-semibold text-text-primary">{row.original.name}</p>
@@ -635,6 +671,8 @@ export default function UsersPage() {
                 columns={columns}
                 data={filteredUsers}
                 searchPlaceholder="Search users..."
+                hideFirstPrevious={true}
+                hideLastNext={true}
                 getRowClassName={(u) => roleToRowClass[(u as User).role]}
               />
             );
@@ -907,18 +945,26 @@ export default function UsersPage() {
         {selectedUser && (
           <div className="space-y-6">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+              <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center relative overflow-hidden">
                 {selectedUser.avatar ? (
-                  <img 
-                    src={selectedUser.avatar} 
-                    alt={selectedUser.name || 'User'} 
-                    className="w-20 h-20 rounded-full object-cover"
+                  <Image
+                    src={buildImageUrl(selectedUser.avatar) || selectedUser.avatar}
+                    alt={selectedUser.name || 'User'}
+                    fill
+                    sizes="80px"
+                    className="rounded-full object-cover"
+                    onError={(e) => {
+                      const parent = (e.target as HTMLImageElement).parentElement;
+                      if (parent) {
+                        const fallback = parent.querySelector('span');
+                        if (fallback) fallback.classList.remove('hidden');
+                      }
+                    }}
                   />
-                ) : (
-                  <span className="text-gray-600 font-semibold text-2xl">
-                    {(selectedUser.name || 'U').charAt(0).toUpperCase()}
-                  </span>
-                )}
+                ) : null}
+                <span className={`text-gray-600 font-semibold text-2xl ${selectedUser.avatar ? 'hidden' : ''}`}>
+                  {(selectedUser.name || 'U').charAt(0).toUpperCase()}
+                </span>
               </div>
               <div>
                 <h3 className="text-xl font-semibold text-text-primary">{selectedUser.name}</h3>

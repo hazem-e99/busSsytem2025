@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, User, LogOut, ChevronDown, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import { Bell, LogOut, ChevronDown, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { notificationAPI, settingsAPI, userAPI } from '@/lib/api';
-import { formatDate, getRelativeTime } from '@/utils/formatDate';
-import { Badge } from '@/components/ui/Badge';
-import { NotificationViewModel } from '@/types/notification';
+import { getRelativeTime } from '@/utils/formatDate';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import { useI18n } from '@/contexts/LanguageContext';
+import Image from 'next/image';
 
 interface Notification {
   id: number;
@@ -24,11 +24,12 @@ export const Topbar = () => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+  // removed isLoadingNotifications state (not used in UI)
   const [systemLogo, setSystemLogo] = useState('/logo2.png');
   const [systemName, setSystemName] = useState('El Renad');
   const [userProfile, setUserProfile] = useState<unknown>(null);
   const [notifFilter, setNotifFilter] = useState<'all' | 'unread'>('all');
+  const { t } = useI18n();
 
   // Fetch system settings (logo and name)
   useEffect(() => {
@@ -136,8 +137,7 @@ export const Topbar = () => {
     const fetchNotifications = async () => {
       if (!user) return;
       
-      try {
-        setIsLoadingNotifications(true);
+    try {
         const response = await notificationAPI.getAll();
         if (response.success && response.data) {
           setNotifications(response.data as Notification[]);
@@ -148,7 +148,7 @@ export const Topbar = () => {
         console.error('Failed to fetch notifications:', error);
         setNotifications([]);
       } finally {
-        setIsLoadingNotifications(false);
+        // no-op
       }
     };
 
@@ -160,7 +160,6 @@ export const Topbar = () => {
   }, [user]);
 
   const userNotifications = Array.isArray(notifications) ? notifications : [];
-  const unreadCount = userNotifications.filter((n: Notification) => !n.isRead).length;
 
   // Load unread count separately for badge
   const [unreadCountBadge, setUnreadCountBadge] = useState(0);
@@ -392,12 +391,14 @@ export const Topbar = () => {
         {/* Left side - Logo and System Name */}
         <div className="flex items-center space-x-6 ml-0 lg:ml-4">
           <div className="flex items-center space-x-4 group cursor-pointer hover:bg-gray-50/80 p-3 rounded-2xl transition-all duration-300">
-            <div className="w-14 h-14 lg:w-16 lg:h-16 flex items-center justify-center overflow-hidden transition-all duration-300 rounded-2xl shadow-lg group-hover:shadow-xl">
+            <div className="w-14 h-14 lg:w-16 lg:h-16 flex items-center justify-center overflow-hidden transition-all duration-300 relative">
               {systemLogo ? (
-                <img 
-                  src={systemLogo} 
+                <Image 
+                  src={systemLogo || '/logo2.png'} 
                   alt="System Logo" 
-                  className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
+                  fill
+                  className="object-contain group-hover:scale-110 transition-transform duration-300"
+                  sizes="(max-width: 768px) 56px, 64px"
                 />
               ) : (
                 <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300 shadow-lg">
@@ -410,7 +411,7 @@ export const Topbar = () => {
                 {systemName}
               </h1>
               <p className="text-sm text-gray-500 hidden lg:block group-hover:text-gray-600 transition-colors duration-300">
-                Transportation Management System
+                {t('topbar.subtitle', 'Transportation Management System')}
               </p>
             </div>
           </div>
@@ -444,8 +445,8 @@ export const Topbar = () => {
                         <Bell className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900">Notifications</h3>
-                        <p className="text-sm text-gray-500">{unreadCountBadge} new messages</p>
+                        <h3 className="text-lg font-bold text-gray-900">{t('topbar.notifications', 'Notifications')}</h3>
+                        <p className="text-sm text-gray-500">{unreadCountBadge} {t('topbar.newMessages', 'new messages')}</p>
                       </div>
                     </div>
                     {userNotifications.length > 0 && (
@@ -458,7 +459,7 @@ export const Topbar = () => {
                               : 'text-gray-600 hover:bg-gray-100 border-gray-200'
                           }`}
                         >
-                          All
+                          {t('common.all', 'All')}
                         </button>
                         <button
                           onClick={() => setNotifFilter('unread')}
@@ -468,7 +469,7 @@ export const Topbar = () => {
                               : 'text-gray-600 hover:bg-gray-100 border-gray-200'
                           }`}
                         >
-                          Unread
+                          {t('topbar.unread', 'Unread')}
                         </button>
                       </div>
                     )}
@@ -503,7 +504,7 @@ export const Topbar = () => {
                               <p className={`text-sm font-semibold truncate pr-3 ${
                                 !notification.isRead ? 'text-blue-700' : 'text-gray-900'
                               }`}>
-                                {notification.title || 'Notification'}
+                                {notification.title || t('topbar.notification', 'Notification')}
                               </p>
                               {!notification.isRead && (
                                 <span className="mt-1 inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
@@ -515,7 +516,7 @@ export const Topbar = () => {
                             <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
                               <Clock className="w-3 h-3" />
                               <span>{getRelativeTime(notification.sentAt)}</span>
-                              {notification.userName && <span>• From: {notification.userName}</span>}
+                              {notification.userName && <span>• {t('topbar.from', 'From')}: {notification.userName}</span>}
                             </div>
                           </div>
                         </div>
@@ -526,8 +527,8 @@ export const Topbar = () => {
                       <div className="mx-auto w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
                         <Bell className="w-8 h-8" />
                       </div>
-                      <p className="text-sm font-medium">No notifications to show</p>
-                      <p className="text-xs mt-1">You&apos;re all caught up!</p>
+                      <p className="text-sm font-medium">{t('topbar.noNotifications', 'No notifications to show')}</p>
+                      <p className="text-xs mt-1">{t('topbar.allCaughtUp', "You're all caught up!")}</p>
                     </div>
                   )}
                 </div>
@@ -539,20 +540,20 @@ export const Topbar = () => {
                       onClick={handleMarkAllAsRead}
                       className="text-xs px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:shadow-lg transition-all duration-300 font-medium w-full sm:w-auto"
                     >
-                      Mark all read
+                      {t('topbar.markAllRead', 'Mark all read')}
                     </button>
                     <button
                       onClick={handleClearAllRead}
                       className="text-xs px-4 py-2 rounded-xl bg-gray-200 text-gray-700 hover:bg-gray-300 transition-all duration-300 font-medium w-full sm:w-auto"
                     >
-                      Clear all
+                      {t('topbar.clearAll', 'Clear all')}
                     </button>
                   </div>
                   <a 
                     href={fallbackUrl} 
                     className="text-xs px-4 py-2 rounded-xl border border-gray-200 hover:bg-white transition-all duration-300 font-medium w-full sm:w-auto text-center"
                   >
-                    View all
+                    {t('topbar.viewAll', 'View all')}
                   </a>
                 </div>
               </div>
@@ -560,17 +561,22 @@ export const Topbar = () => {
           </div>
 
           {/* User menu */}
-          <div className="relative">
+          <div className="relative flex items-center gap-2">
+            {/* Language Toggle */}
+            <LanguageSwitcher className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm" />
+
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center space-x-3 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-xl transition-all duration-300 group"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:shadow-xl transition-all duration-300">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:shadow-xl transition-all duration-300 relative">
                 {getUserAvatar() ? (
-                  <img 
-                    src={getUserAvatar()} 
+                  <Image 
+                    src={getUserAvatar() as string} 
                     alt="Profile" 
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="40px"
                   />
                 ) : (
                   <span className="text-sm font-bold text-white">
@@ -593,12 +599,14 @@ export const Topbar = () => {
                 <div className="p-2">
                   <div className="px-4 py-4 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden relative">
                         {getUserAvatar() ? (
-                          <img 
-                            src={getUserAvatar()} 
+                          <Image 
+                            src={getUserAvatar() as string} 
                             alt="Profile" 
-                            className="w-full h-full object-cover"
+                            fill
+                            className="object-cover"
+                            sizes="48px"
                           />
                         ) : (
                           <span className="text-sm font-bold text-white">
@@ -611,7 +619,7 @@ export const Topbar = () => {
                         <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
                         <div className="flex items-center gap-1 mt-1">
                           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                          <span className="text-xs text-green-600 font-medium">Online</span>
+                          <span className="text-xs text-green-600 font-medium">{t('common.online', 'Online')}</span>
                         </div>
                       </div>
                     </div>
@@ -623,7 +631,7 @@ export const Topbar = () => {
                       className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50/80 hover:text-red-700 flex items-center space-x-3 transition-all duration-300 rounded-lg mx-2"
                   >
                     <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
+                    <span>{t('common.logout', 'Logout')}</span>
                   </button>
                   </div>
                 </div>

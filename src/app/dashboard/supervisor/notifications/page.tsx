@@ -11,8 +11,11 @@ import { NotificationFiltersComponent } from '@/components/notifications/Notific
 import { NotificationStatsComponent } from '@/components/notifications/NotificationStats';
 import { BroadcastNotificationModal } from '@/components/notifications/BroadcastNotificationModal';
 import { NotificationFilters, BroadcastNotificationDTO } from '@/types/notification';
+import { useToast } from '@/components/ui/Toast';
+import { useI18n } from '@/contexts/LanguageContext';
 
 export default function SupervisorNotificationsPage() {
+  const { t } = useI18n();
   const {
     notifications,
     unreadCount,
@@ -36,6 +39,7 @@ export default function SupervisorNotificationsPage() {
 
   const [broadcastModalOpen, setBroadcastModalOpen] = useState(false);
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+  const { showToast } = useToast();
 
   const filteredNotifications = filterNotifications(filters);
   const stats = getStats();
@@ -58,8 +62,19 @@ export default function SupervisorNotificationsPage() {
     try {
       await broadcastNotification(data);
       setBroadcastModalOpen(false);
+      showToast({
+        type: 'success',
+        title: t('pages.notifications.toasts.successTitle', 'Success'),
+        message: t('pages.notifications.toasts.broadcastSent', 'Notification broadcast sent'),
+      });
+      await loadNotifications();
     } catch (error) {
       console.error('Failed to broadcast notification:', error);
+      showToast({
+        type: 'error',
+        title: t('pages.notifications.toasts.errorTitle', 'Error'),
+        message: t('pages.notifications.toasts.broadcastFailed', 'Failed to send broadcast'),
+      });
     } finally {
       setIsBroadcasting(false);
     }
@@ -72,13 +87,13 @@ export default function SupervisorNotificationsPage() {
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Users className="w-7 h-7 text-primary" /> 
-            Supervisor Notifications
+            {t('pages.supervisor.notifications.title', 'Supervisor Notifications')}
           </h1>
-          <p className="text-[#424242]">Review and manage notifications, send announcements to students</p>
+          <p className="text-[#424242]">{t('pages.supervisor.notifications.subtitle', 'Review and manage notifications, send announcements to students')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <Badge variant="outline" className="text-primary border-primary px-3 py-1">
-            {unreadCount} Unread
+            {unreadCount} {t('topbar.unread', 'Unread')}
           </Badge>
           <Button 
             variant="outline" 
@@ -86,7 +101,7 @@ export default function SupervisorNotificationsPage() {
             className="flex items-center gap-2 px-4 py-2 border-gray-300 hover:bg-gray-50 transition-all duration-300 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('driver.myTrips.refresh', 'Refresh')}
           </Button>
           <Button 
             onClick={() => setBroadcastModalOpen(true)}
@@ -94,8 +109,8 @@ export default function SupervisorNotificationsPage() {
           >
             <Send className="w-5 h-5" />
             <div className="text-left">
-              <div className="text-sm font-semibold">Broadcast</div>
-              <div className="text-xs opacity-90">Notification</div>
+              <div className="text-sm font-semibold">{t('pages.notifications.actions.broadcast', 'Broadcast')}</div>
+              <div className="text-xs opacity-90">{t('topbar.notification', 'Notification')}</div>
             </div>
           </Button>
           {unreadCount > 0 && (
@@ -105,8 +120,8 @@ export default function SupervisorNotificationsPage() {
             >
               <CheckCircle2 className="w-5 h-5" />
               <div className="text-left">
-                <div className="text-sm font-semibold">Mark All as</div>
-                <div className="text-xs opacity-90">Read</div>
+                <div className="text-sm font-semibold">{t('pages.notifications.actions.markAllPrefix', 'Mark All as')}</div>
+                <div className="text-xs opacity-90">{t('pages.notifications.status.read', 'Read')}</div>
               </div>
             </Button>
           )}
@@ -127,25 +142,26 @@ export default function SupervisorNotificationsPage() {
       {/* Notifications List */}
       <Card className="bg-white border-[#E0E0E0]">
         <CardHeader>
-          <CardTitle>Notifications</CardTitle>
+          <CardTitle>{t('pages.notifications.list.title', 'Notifications')}</CardTitle>
           <CardDescription>
-            {loading ? 'Loading...' : `${filteredNotifications.length} result(s)`}
+            {loading ? t('common.loading', 'Loading...') : t('pages.notifications.list.results', '{{count}} result(s)')
+              .replace('{{count}}', String(filteredNotifications.length))}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-12 text-[#757575]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Loading notifications...</p>
+              <p>{t('pages.notifications.list.loading', 'Loading notifications...')}</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="text-center py-12 text-[#757575]">
               <Bell className="w-16 h-16 mx-auto mb-4 text-[#BDBDBD]" />
-              <h3 className="text-lg font-medium mb-2">No notifications</h3>
+              <h3 className="text-lg font-medium mb-2">{t('pages.notifications.empty.title', 'No notifications')}</h3>
               <p className="text-sm">
                 {notifications.length === 0 
-                  ? "You're all caught up!" 
-                  : "No notifications match your current filters."
+                  ? t('topbar.allCaughtUp', "You're all caught up!") 
+                  : t('pages.notifications.empty.noMatch', 'No notifications match your current filters.')
                 }
               </p>
             </div>

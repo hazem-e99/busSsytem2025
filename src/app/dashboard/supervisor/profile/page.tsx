@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
+import Image from 'next/image';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -14,8 +15,7 @@ import {
   X,
   UserCheck,
   Shield,
-  Camera,
-  Settings,
+  
   CheckCircle,
   AlertCircle,
   RefreshCw,
@@ -23,11 +23,12 @@ import {
   Eye,
   EyeOff,
   ClipboardList,
-  Users
+  
 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/components/ui/Toast';
+ 
 import { userAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format';
 
 interface SupervisorProfile {
   id: number;
@@ -42,6 +43,7 @@ interface SupervisorProfile {
 }
 
 export default function SupervisorProfilePage() {
+  const { t, lang } = useI18n();
   const [profile, setProfile] = useState<SupervisorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -50,6 +52,7 @@ export default function SupervisorProfilePage() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showSensitiveData, setShowSensitiveData] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarError, setAvatarError] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -76,7 +79,7 @@ export default function SupervisorProfilePage() {
           email: response.email || '',
           phoneNumber: response.phoneNumber || '',
           nationalId: response.nationalId || '',
-          profilePictureUrl: response.profilePictureUrl || 'https://example.com/default-profile.png',
+          profilePictureUrl: response.profilePictureUrl || '/avatar-placeholder.svg',
           status: response.status || 'Active',
           role: response.role || 'Supervisor'
         };
@@ -127,24 +130,24 @@ export default function SupervisorProfilePage() {
 
       // Check if at least one field is provided
       if (!trimmedData.firstName && !trimmedData.lastName && !trimmedData.email && !trimmedData.phoneNumber) {
-        alert('Please fill in at least one field to update.');
+        alert(t('pages.supervisor.profile.alerts.fillOne'));
       return;
     }
 
       // Validate name lengths
       if (trimmedData.firstName && (trimmedData.firstName.length < 2 || trimmedData.firstName.length > 50)) {
-        alert('First name must be between 2 and 50 characters.');
+        alert(t('pages.supervisor.profile.alerts.firstNameLength'));
       return;
       }
 
       if (trimmedData.lastName && (trimmedData.lastName.length < 2 || trimmedData.lastName.length > 50)) {
-        alert('Last name must be between 2 and 50 characters.');
+        alert(t('pages.supervisor.profile.alerts.lastNameLength'));
         return;
       }
 
       // Validate email format
       if (trimmedData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedData.email)) {
-        alert('Please enter a valid email address.');
+        alert(t('pages.supervisor.profile.alerts.invalidEmail'));
         return;
       }
 
@@ -161,11 +164,11 @@ export default function SupervisorProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile updated successfully!');
+        alert(t('pages.supervisor.profile.alerts.updated'));
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(t('pages.supervisor.profile.alerts.updateFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -191,13 +194,13 @@ export default function SupervisorProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+      alert(t('pages.supervisor.profile.alerts.selectImage'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should not exceed 5MB.');
+      alert(t('pages.supervisor.profile.alerts.imageTooLarge'));
       return;
     }
 
@@ -216,11 +219,11 @@ export default function SupervisorProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile picture updated successfully!');
+        alert(t('pages.supervisor.profile.alerts.pictureUpdated'));
       }
     } catch (error) {
       console.error('Failed to update profile picture:', error);
-      alert('Failed to update profile picture. Please try again.');
+      alert(t('pages.supervisor.profile.alerts.pictureUpdateFailed'));
     } finally {
       setIsUploadingImage(false);
       if (fileInputRef.current) {
@@ -231,7 +234,8 @@ export default function SupervisorProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return 'https://example.com/default-profile.png';
+    if (!imagePath) return '/avatar-placeholder.svg';
+    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -252,24 +256,25 @@ export default function SupervisorProfilePage() {
 
   // Get avatar display
   const getAvatarDisplay = () => {
-    if (profile?.profilePictureUrl) {
+    const src = profile?.profilePictureUrl ? buildImageUrl(profile.profilePictureUrl) : '';
+    if (src && !avatarError) {
       return (
-        <img 
-          src={buildImageUrl(profile.profilePictureUrl)}
-          alt="Profile"
-          className="w-full h-full object-cover rounded-full"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://example.com/default-profile.png';
-          }}
+        <Image
+          src={src}
+          alt={t('pages.supervisor.profile.header.alt', 'Profile')}
+          fill
+          sizes="80px"
+          className="object-cover rounded-full"
+          unoptimized
+          onError={() => setAvatarError(true)}
         />
       );
     }
-      return (
+    return (
       <div className="w-full h-full bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-600 rounded-full flex items-center justify-center">
         <UserCheck className="w-12 h-12 text-white" />
-        </div>
-      );
+      </div>
+    );
   };
 
   // Mask sensitive data
@@ -317,11 +322,11 @@ export default function SupervisorProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-orange-50 to-amber-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">Unable to load profile information.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('pages.supervisor.profile.notFound.title')}</h1>
+          <p className="text-gray-600 mb-6">{t('pages.supervisor.profile.notFound.message')}</p>
           <Button onClick={fetchProfile} className="bg-orange-600 hover:bg-orange-700">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t('pages.supervisor.profile.notFound.tryAgain', t('common.tryAgain'))}
           </Button>
         </div>
       </div>
@@ -336,7 +341,7 @@ export default function SupervisorProfilePage() {
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-orange-500 to-amber-600">
+              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-orange-500 to-amber-600 relative">
                 {getAvatarDisplay()}
               </div>
             <div>
@@ -346,17 +351,23 @@ export default function SupervisorProfilePage() {
               </h1>
                   <Badge className="bg-gradient-to-r from-orange-100 to-amber-100 text-orange-800 border-orange-200">
                     <UserCheck className="w-3 h-3 mr-1" />
-                    {profile.role}
+                    {t('roles.supervisor', profile.role)}
                   </Badge>
             </div>
-                <p className="text-gray-600 text-lg">Trip Supervisor</p>
+                <p className="text-gray-600 text-lg">{t('pages.supervisor.profile.header.supervisorTitle')}</p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    {profile.status}
+                    {(() => {
+                      const s = profile.status?.toLowerCase();
+                      const key = s === 'active' ? 'active' : s === 'inactive' ? 'inactive' : undefined;
+                      return key ? t(`common.status.${key}`) : profile.status;
+                    })()}
                   </span>
                   <span>•</span>
-                  <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
+                  <span>
+                    {t('pages.supervisor.profile.header.lastUpdated')}: {formatDate(lang, lastRefresh, { hour: '2-digit', minute: '2-digit' })}
+                  </span>
             </div>
           </div>
         </div>
@@ -379,14 +390,14 @@ export default function SupervisorProfilePage() {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                {isUploadingImage ? 'Uploading...' : 'Change Photo'}
+                {isUploadingImage ? t('pages.supervisor.profile.header.uploading', t('common.loading')) : t('pages.supervisor.profile.header.changePhoto')}
               </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 className="bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+                {isEditing ? t('pages.supervisor.profile.header.cancelEdit') : t('pages.supervisor.profile.header.editProfile')}
               </Button>
             </div>
           </div>
@@ -400,17 +411,17 @@ export default function SupervisorProfilePage() {
               <div className="bg-gradient-to-r from-orange-600 to-amber-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <ClipboardList className="w-5 h-5" />
-                  Supervisor Overview
+                  {t('pages.supervisor.profile.overview.title')}
                 </CardTitle>
                 <CardDescription className="text-orange-100">
-                  Your supervisory profile summary
+                  {t('pages.supervisor.profile.overview.description')}
                 </CardDescription>
               </div>
               <CardContent className="p-6 space-y-6">
                 
                 {/* Avatar Section */}
                 <div className="flex justify-center">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl relative">
                     {getAvatarDisplay()}
                 </div>
                 </div>
@@ -425,22 +436,26 @@ export default function SupervisorProfilePage() {
                     <div className={`w-2 h-2 rounded-full mr-2 ${
                       profile.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
                     }`}></div>
-                    {profile.status}
+                    {(() => {
+                      const s = profile.status?.toLowerCase();
+                      const key = s === 'active' ? 'active' : s === 'inactive' ? 'inactive' : undefined;
+                      return key ? t(`common.status.${key}`) : profile.status;
+                    })()}
                   </Badge>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Supervisor ID</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.supervisor.profile.overview.userId')}</span>
                     <span className="font-mono text-sm font-bold text-gray-900">#{profile.id}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Role Level</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.supervisor.profile.overview.roleLevel')}</span>
                     <Badge className="bg-orange-100 text-orange-800">
                       <UserCheck className="w-3 h-3 mr-1" />
-                      Supervisor
+                      {t('pages.supervisor.profile.overview.roleSupervisor', t('roles.supervisor'))}
                     </Badge>
                   </div>
                 </div>
@@ -449,11 +464,11 @@ export default function SupervisorProfilePage() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-4 h-4 text-orange-600" />
-                    Security Information
+                    {t('pages.supervisor.profile.overview.securityInfo')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">National ID</span>
+                      <span className="text-sm text-gray-600">{t('pages.supervisor.profile.overview.nationalId')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm">
                           {showSensitiveData ? profile.nationalId : maskData(profile.nationalId)}
@@ -484,10 +499,10 @@ export default function SupervisorProfilePage() {
               <div className="bg-gradient-to-r from-amber-600 to-yellow-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <User className="w-5 h-5" />
-                  Personal Information
+                  {t('pages.supervisor.profile.personal.title')}
                 </CardTitle>
                 <CardDescription className="text-amber-100">
-                  Manage your personal details and contact information
+                  {t('pages.supervisor.profile.personal.description')}
                 </CardDescription>
               </div>
               <CardContent className="p-6">
@@ -496,7 +511,7 @@ export default function SupervisorProfilePage() {
                   {/* First Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      First Name
+                      {t('pages.supervisor.profile.personal.firstName')}
                     </label>
                     <div className="relative">
                       <Input
@@ -504,7 +519,7 @@ export default function SupervisorProfilePage() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your first name"
+                        placeholder={t('pages.supervisor.profile.personal.placeholders.firstName')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500' 
@@ -522,7 +537,7 @@ export default function SupervisorProfilePage() {
                   {/* Last Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Last Name
+                      {t('pages.supervisor.profile.personal.lastName')}
                     </label>
                     <div className="relative">
                       <Input
@@ -530,7 +545,7 @@ export default function SupervisorProfilePage() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your last name"
+                        placeholder={t('pages.supervisor.profile.personal.placeholders.lastName')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500' 
@@ -548,7 +563,7 @@ export default function SupervisorProfilePage() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Email Address
+                      {t('pages.supervisor.profile.personal.email')}
                     </label>
                     <div className="relative">
                       <Input
@@ -557,7 +572,7 @@ export default function SupervisorProfilePage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your email"
+                        placeholder={t('pages.supervisor.profile.personal.placeholders.email')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500' 
@@ -575,7 +590,7 @@ export default function SupervisorProfilePage() {
                   {/* Phone Number */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Phone Number
+                      {t('pages.supervisor.profile.personal.phone')}
                     </label>
                     <div className="relative">
                       <Input
@@ -583,7 +598,7 @@ export default function SupervisorProfilePage() {
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your phone number"
+                        placeholder={t('pages.supervisor.profile.personal.placeholders.phone')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-orange-300 focus:border-orange-500 focus:ring-orange-500' 
@@ -610,12 +625,12 @@ export default function SupervisorProfilePage() {
                       {isSaving ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+              {t('common.saving')}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+              {t('common.saveChanges')}
                         </>
                       )}
                     </Button>
@@ -625,7 +640,7 @@ export default function SupervisorProfilePage() {
                       className="w-full sm:flex-1 border-gray-300 hover:bg-gray-50"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Cancel
+            {t('common.cancel')}
                     </Button>
                   </div>
                 )}
@@ -637,11 +652,8 @@ export default function SupervisorProfilePage() {
                       <UserCheck className="w-4 h-4 text-orange-600" />
                 </div>
                   <div>
-                      <h4 className="font-semibold text-orange-900 mb-1">Trip Supervisor</h4>
-                      <p className="text-sm text-orange-700">
-                        You have supervisory access to monitor trips, manage student boarding, 
-                        and ensure safety protocols. Your profile is synchronized across all trip management systems.
-                      </p>
+                      <h4 className="font-semibold text-orange-900 mb-1">{t('pages.supervisor.profile.footer.title')}</h4>
+                      <p className="text-sm text-orange-700">{t('pages.supervisor.profile.footer.message')}</p>
                     </div>
                   </div>
                 </div>

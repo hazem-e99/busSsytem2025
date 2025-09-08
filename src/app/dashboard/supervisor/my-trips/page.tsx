@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
 import { useToast } from '@/components/ui/Toast';
 import { 
   Clock,
@@ -29,13 +28,13 @@ import {
   Route
 } from 'lucide-react';
 import { tripAPI } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
-import { formatDate } from '@/utils/formatDate';
-import { useState, useEffect } from 'react';
+import { formatDate } from '@/lib/format';
+import { useState, useEffect, useCallback } from 'react';
 import { TripViewModel } from '@/types/trip';
+import { useI18n } from '@/contexts/LanguageContext';
 
 export default function SupervisorMyTripsPage() {
-  const { user } = useAuth();
+  const { t, lang, isRTL } = useI18n();
   const { showToast } = useToast();
   const [trips, setTrips] = useState<TripViewModel[]>([]);
   const [filteredTrips, setFilteredTrips] = useState<TripViewModel[]>([]);
@@ -47,7 +46,7 @@ export default function SupervisorMyTripsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Load supervisor's trips
-  const loadMyTrips = async () => {
+  const loadMyTrips = useCallback(async () => {
     try {
       setIsLoading(true);
       const response = await tripAPI.getDriverTrips();
@@ -60,14 +59,14 @@ export default function SupervisorMyTripsPage() {
     } catch (error) {
       console.error('Error loading supervisor trips:', error);
       showToast({
-        title: 'Failed to Load Trips',
-        message: 'An error occurred while loading your trips. Please try again.',
+        title: t('pages.supervisor.myTrips.toasts.loadErrorTitle', 'Failed to Load Trips'),
+        message: t('pages.supervisor.myTrips.toasts.loadErrorMessage', 'An error occurred while loading your trips. Please try again.'),
         type: 'error',
       });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [showToast, t]);
 
   // Filter trips based on search and filters
   useEffect(() => {
@@ -99,7 +98,7 @@ export default function SupervisorMyTripsPage() {
   // Load trips on component mount
   useEffect(() => {
     loadMyTrips();
-  }, []);
+  }, [loadMyTrips]);
 
   // Get status badge variant and icon
   const getStatusConfig = (status: string) => {
@@ -107,7 +106,7 @@ export default function SupervisorMyTripsPage() {
       case 'scheduled':
         return { 
           variant: 'default' as const, 
-          text: 'Scheduled', 
+          text: t('common.status.scheduled', 'Scheduled'), 
           icon: Clock,
           color: 'text-blue-600',
           bgColor: 'bg-blue-50',
@@ -116,7 +115,7 @@ export default function SupervisorMyTripsPage() {
       case 'inprogress':
         return { 
           variant: 'secondary' as const, 
-          text: 'In Progress', 
+          text: t('common.status.inProgress', 'In Progress'), 
           icon: Navigation,
           color: 'text-green-600',
           bgColor: 'bg-green-50',
@@ -125,7 +124,7 @@ export default function SupervisorMyTripsPage() {
       case 'completed':
         return { 
           variant: 'success' as const, 
-          text: 'Completed', 
+          text: t('common.status.completed', 'Completed'), 
           icon: CheckCircle2,
           color: 'text-green-600',
           bgColor: 'bg-green-50',
@@ -134,7 +133,7 @@ export default function SupervisorMyTripsPage() {
       case 'cancelled':
         return { 
           variant: 'destructive' as const, 
-          text: 'Cancelled', 
+          text: t('common.status.cancelled', 'Cancelled'), 
           icon: XCircle,
           color: 'text-red-600',
           bgColor: 'bg-red-50',
@@ -143,7 +142,7 @@ export default function SupervisorMyTripsPage() {
       case 'delayed':
         return { 
           variant: 'warning' as const, 
-          text: 'Delayed', 
+          text: t('common.status.delayed', 'Delayed'), 
           icon: AlertTriangle,
           color: 'text-yellow-600',
           bgColor: 'bg-yellow-50',
@@ -219,7 +218,7 @@ export default function SupervisorMyTripsPage() {
     return (
       <div className="text-center py-12 text-[#757575]">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-        <p>Loading your trips...</p>
+  <p>{t('pages.supervisor.myTrips.loadingYourTrips', 'Loading your trips...')}</p>
       </div>
     );
   }
@@ -231,13 +230,13 @@ export default function SupervisorMyTripsPage() {
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Shield className="w-7 h-7 text-primary" /> 
-            My Trips
+            {t('pages.supervisor.myTrips.title', 'My Trips')}
           </h1>
-          <p className="text-[#424242]">Track and manage your assigned trips as supervisor</p>
+          <p className="text-[#424242]">{t('pages.supervisor.myTrips.subtitle', 'Track and manage your assigned trips as supervisor')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="text-primary border-primary">
-            {trips.length} Total Trips
+            {trips.length} {t('pages.supervisor.myTrips.total', 'Total Trips')}
           </Badge>
           <Button 
             variant="outline" 
@@ -245,18 +244,18 @@ export default function SupervisorMyTripsPage() {
             className="flex items-center gap-2 w-full sm:w-auto"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('pages.supervisor.myTrips.refresh', 'Refresh')}
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
+  {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Total Trips */}
         <Card className="p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-blue-600 font-medium">Total</p>
+      <p className="text-sm text-blue-600 font-medium">{t('pages.supervisor.myTrips.counts.total', 'Total')}</p>
               <p className="text-2xl font-bold text-blue-900">{trips.length}</p>
             </div>
             <Bus className="w-8 h-8 text-blue-500" />
@@ -267,7 +266,7 @@ export default function SupervisorMyTripsPage() {
         <Card className="p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-yellow-600 font-medium">Scheduled</p>
+              <p className="text-sm text-yellow-600 font-medium">{t('common.status.scheduled')}</p>
               <p className="text-2xl font-bold text-yellow-900">
                 {trips.filter(trip => trip.status.toLowerCase() === 'scheduled').length}
               </p>
@@ -282,7 +281,7 @@ export default function SupervisorMyTripsPage() {
         <Card className="p-4 bg-gradient-to-r from-green-50 to-green-100 border-green-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-green-600 font-medium">In Progress</p>
+              <p className="text-sm text-green-600 font-medium">{t('common.status.inProgress')}</p>
               <p className="text-2xl font-bold text-green-900">
                 {trips.filter(trip => trip.status.toLowerCase() === 'inprogress').length}
               </p>
@@ -295,7 +294,7 @@ export default function SupervisorMyTripsPage() {
         <Card className="p-4 bg-gradient-to-r from-red-50 to-red-100 border-red-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-red-600 font-medium">Completed</p>
+              <p className="text-sm text-red-600 font-medium">{t('common.status.completed')}</p>
               <p className="text-2xl font-bold text-red-900">
                 {trips.filter(trip => trip.status.toLowerCase() === 'completed').length}
               </p>
@@ -308,9 +307,9 @@ export default function SupervisorMyTripsPage() {
       {/* Filters */}
       <Card className="bg-white border-[#E0E0E0]">
         <CardHeader>
-          <CardTitle className="text-[#212121]">Filters & Search</CardTitle>
+          <CardTitle className="text-[#212121]">{t('pages.supervisor.myTrips.filters', 'Filters & Search')}</CardTitle>
           <CardDescription className="text-[#757575]">
-            Find the trips you need quickly
+            {t('pages.supervisor.myTrips.filtersDesc', 'Find the trips you need quickly')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -319,7 +318,7 @@ export default function SupervisorMyTripsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-[#757575]" />
               <Input
-                placeholder="Search location, bus number..."
+                placeholder={t('pages.supervisor.myTrips.searchPlaceholder', 'Search location, bus number...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -327,16 +326,16 @@ export default function SupervisorMyTripsPage() {
             </div>
 
             {/* Status Filter */}
-            <Select
+      <Select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'Scheduled', label: 'Scheduled' },
-                { value: 'InProgress', label: 'In Progress' },
-                { value: 'Completed', label: 'Completed' },
-                { value: 'Cancelled', label: 'Cancelled' },
-                { value: 'Delayed', label: 'Delayed' },
+        { value: 'all', label: t('pages.supervisor.myTrips.statusAll', 'All Status') },
+        { value: 'Scheduled', label: t('common.status.scheduled', 'Scheduled') },
+        { value: 'InProgress', label: t('common.status.inProgress', 'In Progress') },
+        { value: 'Completed', label: t('common.status.completed', 'Completed') },
+        { value: 'Cancelled', label: t('common.status.cancelled', 'Cancelled') },
+        { value: 'Delayed', label: t('common.status.delayed', 'Delayed') },
               ]}
             />
 
@@ -350,7 +349,7 @@ export default function SupervisorMyTripsPage() {
             {/* Results Count */}
             <div className="flex items-center text-sm text-[#757575]">
               <Clock className="w-4 h-4 mr-2" />
-              {filteredTrips.length} trip(s)
+              {filteredTrips.length} {t('pages.supervisor.myTrips.tripsShort', 'trip(s)')}
             </div>
           </div>
 
@@ -366,7 +365,7 @@ export default function SupervisorMyTripsPage() {
               className="flex items-center gap-2"
             >
               <Filter className="w-4 h-4" />
-              Clear Filters
+              {t('pages.supervisor.myTrips.clearFilters', 'Clear Filters')}
             </Button>
           </div>
         </CardContent>
@@ -375,21 +374,20 @@ export default function SupervisorMyTripsPage() {
       {/* Trips List */}
       <Card className="bg-white border-[#E0E0E0]">
         <CardHeader>
-          <CardTitle>All Trips</CardTitle>
+          <CardTitle>{t('pages.supervisor.myTrips.listTitle', 'All Trips')}</CardTitle>
           <CardDescription>
-            {isLoading ? 'Loading...' : `${filteredTrips.length} result(s)`}
+            {isLoading ? t('common.loading', 'Loading...') : `${filteredTrips.length} ${t('pages.supervisor.myTrips.results', 'results')}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {filteredTrips.length === 0 ? (
             <div className="text-center py-12 text-[#757575]">
               <Bus className="w-16 h-16 mx-auto mb-4 text-[#BDBDBD]" />
-              <h3 className="text-lg font-medium mb-2">No trips found</h3>
+              <h3 className="text-lg font-medium mb-2">{t('pages.supervisor.myTrips.empty.title', 'No trips found')}</h3>
               <p className="text-sm">
                 {trips.length === 0 
-                  ? "You don't have any assigned trips yet." 
-                  : "No trips match your current filters."
-                }
+                  ? t('pages.supervisor.myTrips.empty.noAssigned', "You don't have any assigned trips yet.") 
+                  : t('pages.supervisor.myTrips.empty.noMatch', 'No trips match your current filters.')}
               </p>
             </div>
           ) : (
@@ -411,9 +409,9 @@ export default function SupervisorMyTripsPage() {
                           </div>
                           <div>
                             <h3 className="text-lg font-semibold text-[#212121]">
-                              {trip.busNumber || `Bus #${trip.busId}`}
+                              {trip.busNumber || `${t('pages.supervisor.myTrips.labels.bus', 'Bus')} #${trip.busId}`}
                             </h3>
-                            <p className="text-sm text-[#757575]">Trip #{trip.id}</p>
+                            <p className="text-sm text-[#757575]">{t('pages.supervisor.myTrips.labels.trip', 'Trip')} #{trip.id}</p>
                           </div>
                           <Badge 
                             variant={statusConfig.variant}
@@ -430,7 +428,7 @@ export default function SupervisorMyTripsPage() {
                             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
                             <span className="text-sm font-medium text-[#212121]">{trip.startLocation}</span>
                           </div>
-                          <ArrowRight className="w-4 h-4 text-[#757575]" />
+                          <ArrowRight className={`w-4 h-4 text-[#757575] ${isRTL ? 'rotate-180' : ''}`} />
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                             <span className="text-sm font-medium text-[#212121]">{trip.endLocation}</span>
@@ -442,28 +440,28 @@ export default function SupervisorMyTripsPage() {
                           <div className="flex items-center gap-2">
                             <Calendar className="w-4 h-4 text-blue-500" />
                             <div>
-                              <p className="text-xs text-[#757575]">Date</p>
-                              <p className="text-sm font-medium text-[#212121]">{formatDate(trip.tripDate)}</p>
+                              <p className="text-xs text-[#757575]">{t('pages.supervisor.myTrips.labels.date', 'Date')}</p>
+                              <p className="text-sm font-medium text-[#212121]">{formatDate(lang, trip.tripDate)}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Clock className="w-4 h-4 text-green-500" />
                             <div>
-                              <p className="text-xs text-[#757575]">Departure</p>
+                              <p className="text-xs text-[#757575]">{t('pages.supervisor.myTrips.labels.departure', 'Departure')}</p>
                               <p className="text-sm font-medium text-[#212121]">{formatTime(trip.departureTimeOnly)}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Timer className="w-4 h-4 text-orange-500" />
                             <div>
-                              <p className="text-xs text-[#757575]">Arrival</p>
+                              <p className="text-xs text-[#757575]">{t('pages.supervisor.myTrips.labels.arrival', 'Arrival')}</p>
                               <p className="text-sm font-medium text-[#212121]">{formatTime(trip.arrivalTimeOnly)}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Users className="w-4 h-4 text-purple-500" />
                             <div>
-                              <p className="text-xs text-[#757575]">Occupancy</p>
+                              <p className="text-xs text-[#757575]">{t('pages.supervisor.myTrips.labels.occupancy', 'Occupancy')}</p>
                               <p className="text-sm font-medium text-[#212121]">
                                 {trip.bookedSeats || 0}/{trip.totalSeats || 0}
                               </p>
@@ -474,7 +472,7 @@ export default function SupervisorMyTripsPage() {
                         {/* Occupancy Bar */}
                         <div className="mt-4">
                           <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-[#757575]">Seat Occupancy</span>
+                            <span className="text-sm text-[#757575]">{t('pages.supervisor.myTrips.labels.seatOccupancy', 'Seat Occupancy')}</span>
                             <span className={`text-sm font-medium px-2 py-1 rounded-full ${occupancyColor}`}>
                               {occupancyPercentage}%
                             </span>
@@ -490,8 +488,8 @@ export default function SupervisorMyTripsPage() {
                             ></div>
                           </div>
                           <div className="flex items-center justify-between mt-1 text-xs text-[#757575]">
-                            <span>{trip.bookedSeats || 0} booked</span>
-                            <span>{trip.avalableSeates || 0} available</span>
+                            <span>{trip.bookedSeats || 0} {t('pages.supervisor.myTrips.labels.booked', 'booked')}</span>
+                            <span>{trip.avalableSeates || 0} {t('pages.supervisor.myTrips.labels.available', 'available')}</span>
                           </div>
                         </div>
 
@@ -502,7 +500,7 @@ export default function SupervisorMyTripsPage() {
                               <User className="w-4 h-4 text-[#757575]" />
                             </div>
                             <span className="text-sm text-[#757575]">
-                              Conductor: {trip.conductorName || 'Unassigned'}
+                              {t('pages.supervisor.myTrips.labels.conductor', 'Conductor')}: {trip.conductorName || t('pages.supervisor.myTrips.labels.unassigned', 'Unassigned')}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -538,7 +536,7 @@ export default function SupervisorMyTripsPage() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-[#212121]">
-                    Trip #{selectedTrip.id} Details
+                    {t('pages.supervisor.myTrips.labels.trip', 'Trip')} #{selectedTrip.id} {t('pages.supervisor.myTrips.labels.details', 'Details')}
                   </h2>
                   <p className="text-sm text-[#757575]">
                     {selectedTrip.busNumber || `Bus #${selectedTrip.busId}`}
@@ -557,10 +555,10 @@ export default function SupervisorMyTripsPage() {
 
             {/* Modal Content */}
             <div className="p-4 space-y-4">
-              {isLoading ? (
+        {isLoading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-[#757575]">Loading trip details...</p>
+          <p className="text-[#757575]">{t('pages.supervisor.myTrips.modal.loading', 'Loading trip details...')}</p>
                 </div>
               ) : (
                 <>
@@ -572,7 +570,7 @@ export default function SupervisorMyTripsPage() {
                         <div className="p-1.5 bg-green-50 rounded-lg border border-green-200">
                           <Shield className="w-4 h-4 text-green-500" />
                         </div>
-                        <h3 className="text-base font-semibold text-[#212121]">Trip Status</h3>
+                        <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.tripStatus', 'Trip Status')}</h3>
                       </div>
                       <Badge 
                         variant={getStatusConfig(selectedTrip.status).variant}
@@ -592,7 +590,7 @@ export default function SupervisorMyTripsPage() {
                         <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
                           <Route className="w-4 h-4 text-purple-500" />
                         </div>
-                        <h3 className="text-base font-semibold text-[#212121]">Route</h3>
+                        <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.route', 'Route')}</h3>
                       </div>
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
@@ -616,22 +614,22 @@ export default function SupervisorMyTripsPage() {
                       <div className="p-1.5 bg-blue-50 rounded-lg border border-blue-200">
                         <Calendar className="w-4 h-4 text-blue-500" />
                       </div>
-                      <h3 className="text-base font-semibold text-[#212121]">Schedule & Timing</h3>
+                      <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.scheduleTiming', 'Schedule & Timing')}</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
                         <Calendar className="w-5 h-5 text-blue-500 mx-auto mb-1" />
-                        <p className="text-xs text-[#757575] mb-1">Trip Date</p>
-                        <p className="text-sm font-semibold text-[#212121]">{formatDate(selectedTrip.tripDate)}</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.tripDate', 'Trip Date')}</p>
+                        <p className="text-sm font-semibold text-[#212121]">{formatDate(lang, selectedTrip.tripDate)}</p>
                       </div>
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
                         <Clock className="w-5 h-5 text-green-500 mx-auto mb-1" />
-                        <p className="text-xs text-[#757575] mb-1">Departure Time</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.departureTime', 'Departure Time')}</p>
                         <p className="text-sm font-semibold text-[#212121]">{formatTime(selectedTrip.departureTimeOnly)}</p>
                       </div>
                       <div className="text-center p-2 bg-gray-50 rounded-lg">
                         <Timer className="w-5 h-5 text-orange-500 mx-auto mb-1" />
-                        <p className="text-xs text-[#757575] mb-1">Arrival Time</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.arrivalTime', 'Arrival Time')}</p>
                         <p className="text-sm font-semibold text-[#212121]">{formatTime(selectedTrip.arrivalTimeOnly)}</p>
                       </div>
                     </div>
@@ -643,11 +641,11 @@ export default function SupervisorMyTripsPage() {
                       <div className="p-1.5 bg-yellow-50 rounded-lg border border-yellow-200">
                         <Users className="w-4 h-4 text-yellow-500" />
                       </div>
-                      <h3 className="text-base font-semibold text-[#212121]">Seat Occupancy</h3>
+                      <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.seatOccupancy', 'Seat Occupancy')}</h3>
                     </div>
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-[#757575]">Occupancy Rate</span>
+                        <span className="text-sm text-[#757575]">{t('pages.supervisor.myTrips.labels.occupancyRate', 'Occupancy Rate')}</span>
                         <span className={`text-lg font-bold px-3 py-1 rounded-full ${getOccupancyColor(getOccupancyPercentage(selectedTrip))}`}>
                           {getOccupancyPercentage(selectedTrip)}%
                         </span>
@@ -664,15 +662,15 @@ export default function SupervisorMyTripsPage() {
                       </div>
                       <div className="grid grid-cols-3 gap-3 text-center">
                         <div className="p-2 bg-blue-50 rounded-lg border border-blue-200">
-                          <p className="text-xs text-[#757575] mb-1">Total Seats</p>
+                          <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.totalSeats', 'Total Seats')}</p>
                           <p className="text-base font-bold text-blue-600">{selectedTrip.totalSeats || 0}</p>
                         </div>
                         <div className="p-2 bg-green-50 rounded-lg border border-green-200">
-                          <p className="text-xs text-[#757575] mb-1">Booked</p>
+                          <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.booked', 'Booked')}</p>
                           <p className="text-base font-bold text-green-600">{selectedTrip.bookedSeats || 0}</p>
                         </div>
                         <div className="p-2 bg-orange-50 rounded-lg border border-orange-200">
-                          <p className="text-xs text-[#757575] mb-1">Available</p>
+                          <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.available', 'Available')}</p>
                           <p className="text-base font-bold text-orange-600">{selectedTrip.avalableSeates || 0}</p>
                         </div>
                       </div>
@@ -685,7 +683,7 @@ export default function SupervisorMyTripsPage() {
                       <div className="p-1.5 bg-purple-50 rounded-lg border border-purple-200">
                         <User className="w-4 h-4 text-purple-500" />
                       </div>
-                      <h3 className="text-base font-semibold text-[#212121]">Staff Information</h3>
+                      <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.staffInfo', 'Staff Information')}</h3>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
@@ -693,8 +691,8 @@ export default function SupervisorMyTripsPage() {
                           <User className="w-3 h-3 text-blue-500" />
                         </div>
                         <div>
-                          <p className="text-xs text-[#757575]">Driver</p>
-                          <p className="text-sm font-semibold text-[#212121]">{selectedTrip.driverName || 'Unassigned'}</p>
+                          <p className="text-xs text-[#757575]">{t('pages.supervisor.myTrips.labels.driver', 'Driver')}</p>
+                          <p className="text-sm font-semibold text-[#212121]">{selectedTrip.driverName || t('pages.supervisor.myTrips.labels.unassigned', 'Unassigned')}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
@@ -702,8 +700,8 @@ export default function SupervisorMyTripsPage() {
                           <Shield className="w-3 h-3 text-green-500" />
                         </div>
                         <div>
-                          <p className="text-xs text-[#757575]">Conductor</p>
-                          <p className="text-sm font-semibold text-[#212121]">{selectedTrip.conductorName || 'Unassigned'}</p>
+                          <p className="text-xs text-[#757575]">{t('pages.supervisor.myTrips.labels.conductor', 'Conductor')}</p>
+                          <p className="text-sm font-semibold text-[#212121]">{selectedTrip.conductorName || t('pages.supervisor.myTrips.labels.unassigned', 'Unassigned')}</p>
                         </div>
                       </div>
                     </div>
@@ -715,23 +713,23 @@ export default function SupervisorMyTripsPage() {
                       <div className="p-1.5 bg-gray-50 rounded-lg border border-gray-200">
                         <Bus className="w-4 h-4 text-gray-500" />
                       </div>
-                      <h3 className="text-base font-semibold text-[#212121]">Trip Details</h3>
+                      <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.tripDetails', 'Trip Details')}</h3>
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <p className="text-xs text-[#757575] mb-1">Trip ID</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.tripId', 'Trip ID')}</p>
                         <p className="font-semibold text-[#212121]">#{selectedTrip.id}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[#757575] mb-1">Bus ID</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.busId', 'Bus ID')}</p>
                         <p className="font-semibold text-[#212121]">#{selectedTrip.busId}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[#757575] mb-1">Driver ID</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.driverId', 'Driver ID')}</p>
                         <p className="font-semibold text-[#212121]">#{selectedTrip.driverId}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-[#757575] mb-1">Conductor ID</p>
+                        <p className="text-xs text-[#757575] mb-1">{t('pages.supervisor.myTrips.labels.conductorId', 'Conductor ID')}</p>
                         <p className="font-semibold text-[#212121]">#{selectedTrip.conductorId}</p>
                       </div>
                     </div>
@@ -744,9 +742,9 @@ export default function SupervisorMyTripsPage() {
                         <div className="p-1.5 bg-indigo-50 rounded-lg border border-indigo-200">
                           <MapPin className="w-4 h-4 text-indigo-500" />
                         </div>
-                        <h3 className="text-base font-semibold text-[#212121]">Stop Locations</h3>
+                        <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.stopLocations', 'Stop Locations')}</h3>
                         <Badge variant="outline" className="text-xs">
-                          {selectedTrip.stopLocations.length} stops
+                          {selectedTrip.stopLocations.length} {t('pages.supervisor.myTrips.labels.stops', 'stops')}
                         </Badge>
                       </div>
                       <div className="space-y-2">
@@ -759,10 +757,10 @@ export default function SupervisorMyTripsPage() {
                               <p className="text-sm font-medium text-[#212121]">{stop.address}</p>
                               <div className="flex items-center gap-3 mt-1">
                                 <span className="text-xs text-[#757575]">
-                                  Arrival: {formatTime(stop.arrivalTimeOnly)}
+                                  {t('pages.supervisor.myTrips.labels.stopArrival', 'Arrival')}: {formatTime(stop.arrivalTimeOnly)}
                                 </span>
                                 <span className="text-xs text-[#757575]">
-                                  Departure: {formatTime(stop.departureTimeOnly)}
+                                  {t('pages.supervisor.myTrips.labels.stopDeparture', 'Departure')}: {formatTime(stop.departureTimeOnly)}
                                 </span>
                               </div>
                             </div>
@@ -776,9 +774,9 @@ export default function SupervisorMyTripsPage() {
                         <div className="p-1.5 bg-gray-50 rounded-lg border border-gray-200">
                           <MapPin className="w-4 h-4 text-gray-500" />
                         </div>
-                        <h3 className="text-base font-semibold text-[#212121]">Stop Locations</h3>
+                        <h3 className="text-base font-semibold text-[#212121]">{t('pages.supervisor.myTrips.labels.stopLocations', 'Stop Locations')}</h3>
                       </div>
-                      <p className="text-sm text-[#757575]">No stop locations available for this trip.</p>
+                      <p className="text-sm text-[#757575]">{t('pages.supervisor.myTrips.labels.noStops', 'No stop locations available for this trip.')}</p>
                     </Card>
                   )}
                 </>
@@ -788,7 +786,7 @@ export default function SupervisorMyTripsPage() {
             {/* Modal Footer */}
             <div className="flex items-center justify-end gap-3 p-4 border-t border-[#E0E0E0] bg-gray-50">
               <Button variant="outline" onClick={closeModal}>
-                Close
+                {t('common.close', 'Close')}
               </Button>
             </div>
           </div>

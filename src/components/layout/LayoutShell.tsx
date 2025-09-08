@@ -4,11 +4,13 @@ import { usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { Topbar } from '@/components/layout/Topbar';
 import { Sidebar } from '@/components/layout/Sidebar';
+import { useI18n } from '@/contexts/LanguageContext';
 
 export default function LayoutShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const pathname = usePathname();
   const userRole = user?.role || 'student';
+  const { isRTL } = useI18n();
 
   // Define routes that should not have the main layout (Topbar + Sidebar)
   const authRoutes = [
@@ -37,8 +39,8 @@ export default function LayoutShell({ children }: { children: ReactNode }) {
   // Regular layout for all other routes
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar userRole={userRole} />
-      <div className="lg:ml-72">
+  <Sidebar userRole={userRole} />
+  <div className={isRTL ? 'lg:mr-72' : 'lg:ml-72'}>
         <Topbar />
         <main className="pt-4 px-3 sm:px-6">{children}</main>
       </div>

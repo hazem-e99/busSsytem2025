@@ -8,8 +8,6 @@ import {
   Users, 
   Bus, 
   CreditCard, 
-  BarChart3, 
-  Settings,
   Menu,
   X,
   Calendar,
@@ -18,7 +16,6 @@ import {
   LayoutDashboard,
   ChevronRight,
   Sparkles,
-  Shield,
   Crown,
   GraduationCap,
   UserCheck,
@@ -27,6 +24,7 @@ import {
 } from 'lucide-react';
 import { UserRole } from '@/types/user';
 import { notificationAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
 
 interface SidebarProps {
   userRole: UserRole;
@@ -124,6 +122,7 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
   const pathname = usePathname();
   const items = navigationItems[userRole] || [];
   const config = roleConfig[userRole] || roleConfig.admin;
+  const { isRTL, t } = useI18n();
 
   // Load unread notification count
   useEffect(() => {
@@ -150,7 +149,7 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-3 rounded-xl bg-white shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 backdrop-blur-sm"
+        className={cn('lg:hidden fixed top-4 z-50 p-3 rounded-xl bg-white shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 backdrop-blur-sm', isRTL ? 'right-4' : 'left-4')}
       >
         {isOpen ? (
           <X className="h-6 w-6 text-gray-700" />
@@ -160,10 +159,11 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
       </button>
 
       {/* Sidebar */}
-      <div
+    <div
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-72 bg-white shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0 border-r border-gray-200',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+      'fixed inset-y-0 z-40 w-72 bg-white shadow-2xl transform transition-all duration-300 ease-in-out lg:translate-x-0',
+      isRTL ? 'right-0 border-l border-gray-200' : 'left-0 border-r border-gray-200',
+      isOpen ? 'translate-x-0' : isRTL ? 'translate-x-full' : '-translate-x-full'
         )}
       >
         <div className="flex flex-col h-full">
@@ -179,15 +179,15 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
                   <config.icon className="w-7 h-7 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-white">Bus System</h1>
-                  <p className="text-white/80 text-sm capitalize">{userRole} Dashboard</p>
+                  <h1 className="text-2xl font-bold text-white">{t('brand.name', 'Bus System')}</h1>
+                  <p className="text-white/80 text-sm capitalize">{t('sidebar.dashboardFor', '{{role}} Dashboard').replace('{{role}}', userRole.replace('-', ' '))}</p>
                 </div>
               </div>
               
               {/* Role Badge */}
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                <span className="text-white/90 text-sm font-medium">Active Session</span>
+                <span className="text-white/90 text-sm font-medium">{t('sidebar.activeSession', 'Active Session')}</span>
               </div>
             </div>
           </div>
@@ -207,9 +207,9 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
                     className="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-gray-400 cursor-not-allowed opacity-60 bg-gray-50"
                   >
                     <item.icon className="mr-3 h-5 w-5" />
-                    <span className="flex-1">{item.name}</span>
+                    <span className="flex-1">{t(`nav.${item.name.toLowerCase().replace(/\s+/g,'_')}`, item.name)}</span>
                     <span className="ml-auto text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
-                      قريباً
+                      {t('common.soon', 'Soon')}
                     </span>
                   </div>
                 );
@@ -241,16 +241,16 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
                   </div>
                   
                   {/* Text */}
-                  <span className="flex-1">{item.name}</span>
+                  <span className="flex-1">{t(`nav.${item.name.toLowerCase().replace(/\s+/g,'_')}`, item.name)}</span>
                   
                   {/* Badges */}
                   <div className="flex items-center gap-2">
-                    {item.badge && !isActive && (
+          {item.badge && !isActive && (
                       <span className={cn(
                         'text-xs px-2 py-1 rounded-full font-medium',
                         config.badgeColor
                       )}>
-                        {item.badge}
+            {t(`nav.badges.${item.badge.toLowerCase().replace(/\s+/g,'_')}`, item.badge)}
                       </span>
                     )}
                     
@@ -289,12 +289,12 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <p className="text-xs text-gray-500 font-medium">Online</p>
+                  <p className="text-xs text-gray-500 font-medium">{t('common.online', 'Online')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-1">
                 <Sparkles className="w-4 h-4 text-yellow-500" />
-                <span className="text-xs font-bold text-yellow-600">Pro</span>
+                <span className="text-xs font-bold text-yellow-600">{t('common.pro', 'Pro')}</span>
               </div>
             </div>
           </div>

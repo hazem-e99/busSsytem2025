@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import TripList from '@/components/trips/TripList';
 import TripDetails from '@/components/trips/TripDetails';
 import { tripService } from '@/lib/tripService';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { api, busAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
 
 // User interface
 interface User {
@@ -48,6 +49,7 @@ interface BusFilter {
 type Mode = 'list' | 'view';
 
 export default function MovementManagerTripsPage() {
+  const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('list');
   const [items, setItems] = useState<TripResponse[]>([]);
   const [current, setCurrent] = useState<TripResponse | null>(null);
@@ -59,7 +61,7 @@ export default function MovementManagerTripsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -70,14 +72,14 @@ export default function MovementManagerTripsPage() {
       else data = await tripService.getAll();
       setItems(Array.isArray(data) ? data : []);
     } catch (e: unknown) {
-      const error = e as Error;
-      setError(error?.message || 'Failed to load trips');
+  const error = e as Error;
+  setError(error?.message || t('pages.movementManager.trips.errors.loadFailed'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterDate, filterDriver, filterBus, t]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
     const loadRefs = async () => {
@@ -109,54 +111,55 @@ export default function MovementManagerTripsPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Trips</h1>
+  <h1 className="text-xl font-semibold">{t('pages.movementManager.trips.title')}</h1>
       </div>
 
       {mode === 'list' && (
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
             <div>
-              <label className="text-sm font-medium">Date</label>
+              <label className="text-sm font-medium">{t('pages.movementManager.trips.filters.date')}</label>
               <Input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)} />
             </div>
             <div>
-              <label className="text-sm font-medium">Driver</label>
+              <label className="text-sm font-medium">{t('pages.movementManager.trips.filters.driver')}</label>
               <Select value={filterDriver} onChange={e => setFilterDriver((e.target as HTMLSelectElement).value)}>
-                <option value="">All drivers</option>
+                <option value="">{t('pages.movementManager.trips.filters.allDrivers')}</option>
                 {drivers.map(d => (
                   <option key={d.id} value={String(d.id)}>{d.name}</option>
                 ))}
               </Select>
             </div>
             <div>
-              <label className="text-sm font-medium">Bus</label>
+              <label className="text-sm font-medium">{t('pages.movementManager.trips.filters.bus')}</label>
               <Select value={filterBus} onChange={e => setFilterBus((e.target as HTMLSelectElement).value)}>
-                <option value="">All buses</option>
+                <option value="">{t('pages.movementManager.trips.filters.allBuses')}</option>
                 {buses.map(b => (
                   <option key={b.id} value={String(b.id)}>{b.label}</option>
                 ))}
               </Select>
             </div>
             <div className="flex gap-2">
-              <Button onClick={load} disabled={loading}>Apply</Button>
-              <Button variant="outline" onClick={resetFilters}>Reset</Button>
+              <Button onClick={load} disabled={loading}>{t('pages.movementManager.trips.filters.apply')}</Button>
+              <Button variant="outline" onClick={resetFilters}>{t('pages.movementManager.trips.filters.reset')}</Button>
             </div>
           </div>
 
-          {error && <div className="text-red-600 text-sm">{error}</div>}
+          {error && <div className="text-red-600 text-sm">{t('pages.movementManager.trips.errors.loadFailed', error)}</div>}
 
-          <TripList trips={items} onView={onView} onEdit={() => {}} onDelete={() => {}} />
+          <TripList trips={items} onView={onView} onEdit={() => {}} onDelete={() => {}} i18nBase="pages.movementManager.trips" />
         </div>
       )}
 
       {mode === 'view' && current && (
         <div className="space-y-4">
-          <Button variant="outline" onClick={() => setMode('list')}>Back</Button>
+          <Button variant="outline" onClick={() => setMode('list')}>{t('common.back')}</Button>
           <TripDetails 
             trip={current} 
             onBack={() => setMode('list')} 
             onEdit={() => {}} 
             onDelete={() => {}} 
+            i18nBase="pages.movementManager.trips"
           />
         </div>
       )}

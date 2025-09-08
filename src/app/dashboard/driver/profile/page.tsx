@@ -1,10 +1,9 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useToast } from '@/components/ui/Toast';
 import { 
   User,
   Mail,
@@ -13,23 +12,20 @@ import {
   Edit3,
   Save,
   X,
-  Camera,
   Car,
-  Settings,
   CheckCircle,
   AlertCircle,
   RefreshCw,
   Upload,
   Eye,
   EyeOff,
-  MapPin,
-  Clock
+  MapPin
 } from 'lucide-react';
-import { 
-  userAPI
-} from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
+import { userAPI } from '@/lib/api';
 import { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
+import { useI18n } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format';
 
 interface DriverProfile {
   id: number;
@@ -45,7 +41,7 @@ interface DriverProfile {
 }
 
 export default function DriverProfile() {
-  const { user } = useAuth();
+  const { t, lang } = useI18n();
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -53,7 +49,7 @@ export default function DriverProfile() {
   const [driver, setDriver] = useState<DriverProfile | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showSensitiveData, setShowSensitiveData] = useState(false);
-  const { showToast } = useToast();
+  // const { showToast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -82,7 +78,7 @@ export default function DriverProfile() {
           email: response.email || '',
           phoneNumber: response.phoneNumber || '',
           nationalId: response.nationalId || '',
-          profilePictureUrl: response.profilePictureUrl || 'https://example.com/default-profile.png',
+          profilePictureUrl: response.profilePictureUrl || '/avatar-placeholder.svg',
           status: response.status || 'Active',
           role: response.role || 'Driver',
           licenseNumber: response.licenseNumber || ''
@@ -136,30 +132,30 @@ export default function DriverProfile() {
 
       // Check if at least one field is provided
       if (!trimmedData.firstName && !trimmedData.lastName && !trimmedData.email && !trimmedData.phoneNumber && !trimmedData.licenseNumber) {
-        alert('Please fill in at least one field to update.');
+        alert(t('pages.driver.profile.alerts.fillOne'));
         return;
       }
 
       // Validate name lengths
       if (trimmedData.firstName && (trimmedData.firstName.length < 2 || trimmedData.firstName.length > 50)) {
-        alert('First name must be between 2 and 50 characters.');
+        alert(t('pages.driver.profile.alerts.firstNameLength'));
         return;
       }
 
       if (trimmedData.lastName && (trimmedData.lastName.length < 2 || trimmedData.lastName.length > 50)) {
-        alert('Last name must be between 2 and 50 characters.');
+        alert(t('pages.driver.profile.alerts.lastNameLength'));
         return;
       }
 
       // Validate email format
       if (trimmedData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedData.email)) {
-        alert('Please enter a valid email address.');
+        alert(t('pages.driver.profile.alerts.invalidEmail'));
         return;
       }
 
       // Validate license number format (8-10 digits)
       if (trimmedData.licenseNumber && !/^\d{8,10}$/.test(trimmedData.licenseNumber)) {
-        alert('License number must be 8-10 digits.');
+        alert(t('pages.driver.profile.alerts.licenseNumberFormat'));
         return;
       }
 
@@ -176,11 +172,11 @@ export default function DriverProfile() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile updated successfully!');
+        alert(t('pages.driver.profile.alerts.updated'));
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(t('pages.driver.profile.alerts.updateFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -207,13 +203,13 @@ export default function DriverProfile() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+      alert(t('pages.driver.profile.alerts.selectImage'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should not exceed 5MB.');
+      alert(t('pages.driver.profile.alerts.imageTooLarge'));
       return;
     }
 
@@ -232,11 +228,11 @@ export default function DriverProfile() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile picture updated successfully!');
+        alert(t('pages.driver.profile.alerts.pictureUpdated'));
       }
     } catch (error) {
       console.error('Failed to update profile picture:', error);
-      alert('Failed to update profile picture. Please try again.');
+      alert(t('pages.driver.profile.alerts.pictureUpdateFailed'));
     } finally {
       setIsUploadingImage(false);
       if (fileInputRef.current) {
@@ -247,7 +243,8 @@ export default function DriverProfile() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return 'https://example.com/default-profile.png';
+    if (!imagePath) return '/avatar-placeholder.svg';
+    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -270,14 +267,12 @@ export default function DriverProfile() {
   const getAvatarDisplay = () => {
     if (driver?.profilePictureUrl) {
       return (
-        <img
+        <Image
           src={buildImageUrl(driver.profilePictureUrl)}
-          alt="Profile"
-          className="w-full h-full object-cover rounded-full"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://example.com/default-profile.png';
-          }}
+          alt={t('pages.driver.profile.header.alt', 'Profile')}
+          fill
+          sizes="80px"
+          className="object-cover rounded-full"
         />
       );
     }
@@ -333,11 +328,11 @@ export default function DriverProfile() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">Unable to load profile information.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('pages.driver.profile.notFound.title')}</h1>
+          <p className="text-gray-600 mb-6">{t('pages.driver.profile.notFound.message')}</p>
           <Button onClick={fetchDriverProfile} className="bg-blue-600 hover:bg-blue-700">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t('pages.driver.profile.notFound.tryAgain', t('common.tryAgain'))}
           </Button>
         </div>
       </div>
@@ -352,7 +347,7 @@ export default function DriverProfile() {
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-blue-500 to-indigo-600">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-blue-500 to-indigo-600">
                 {getAvatarDisplay()}
               </div>
               <div>
@@ -362,17 +357,23 @@ export default function DriverProfile() {
                   </h1>
                   <Badge className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 border-blue-200">
                     <Car className="w-3 h-3 mr-1" />
-                    {driver.role}
+                    {t('roles.driver', driver.role)}
                   </Badge>
                 </div>
-                <p className="text-gray-600 text-lg">Professional Driver</p>
+                <p className="text-gray-600 text-lg">{t('pages.driver.profile.header.driverTitle')}</p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    {driver.status}
+                    {(() => {
+                      const s = driver.status?.toLowerCase();
+                      const key = s === 'active' ? 'active' : s === 'inactive' ? 'inactive' : undefined;
+                      return key ? t(`common.status.${key}`) : driver.status;
+                    })()}
                   </span>
                   <span>•</span>
-                  <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
+                  <span>
+                    {t('pages.driver.profile.header.lastUpdated')}: {formatDate(lang, lastRefresh, { hour: '2-digit', minute: '2-digit' })}
+                  </span>
                 </div>
               </div>
             </div>
@@ -395,14 +396,14 @@ export default function DriverProfile() {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                {isUploadingImage ? 'Uploading...' : 'Change Photo'}
+                {isUploadingImage ? t('pages.driver.profile.header.uploading', t('common.loading')) : t('pages.driver.profile.header.changePhoto')}
               </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+                {isEditing ? t('pages.driver.profile.header.cancelEdit') : t('pages.driver.profile.header.editProfile')}
               </Button>
             </div>
           </div>
@@ -416,17 +417,17 @@ export default function DriverProfile() {
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <MapPin className="w-5 h-5" />
-                  Driver Overview
+                  {t('pages.driver.profile.overview.title')}
                 </CardTitle>
                 <CardDescription className="text-blue-100">
-                  Your professional driver profile summary
+                  {t('pages.driver.profile.overview.description')}
                 </CardDescription>
               </div>
               <CardContent className="p-6 space-y-6">
                 
                 {/* Avatar Section */}
                 <div className="flex justify-center">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl">
                     {getAvatarDisplay()}
                   </div>
                 </div>
@@ -441,29 +442,33 @@ export default function DriverProfile() {
                     <div className={`w-2 h-2 rounded-full mr-2 ${
                       driver.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
                     }`}></div>
-                    {driver.status}
+                    {(() => {
+                      const s = driver.status?.toLowerCase();
+                      const key = s === 'active' ? 'active' : s === 'inactive' ? 'inactive' : undefined;
+                      return key ? t(`common.status.${key}`) : driver.status;
+                    })()}
                   </Badge>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Driver ID</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.driver.profile.overview.userId')}</span>
                     <span className="font-mono text-sm font-bold text-gray-900">#{driver.id}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">License Number</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.driver.profile.overview.licenseNumber')}</span>
                     <span className="font-mono text-sm font-bold text-gray-900">
-                      {driver.licenseNumber || 'N/A'}
+                      {driver.licenseNumber || t('common.na')}
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Role Level</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.driver.profile.overview.roleLevel')}</span>
                     <Badge className="bg-blue-100 text-blue-800">
                       <Car className="w-3 h-3 mr-1" />
-                      Driver
+                      {t('pages.driver.profile.overview.roleDriver', t('roles.driver'))}
                     </Badge>
                   </div>
                 </div>
@@ -472,11 +477,11 @@ export default function DriverProfile() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-4 h-4 text-blue-600" />
-                    Security Information
+                    {t('pages.driver.profile.overview.securityInfo')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">National ID</span>
+                      <span className="text-sm text-gray-600">{t('pages.driver.profile.overview.nationalId')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm">
                           {showSensitiveData ? driver.nationalId : maskData(driver.nationalId)}
@@ -507,10 +512,10 @@ export default function DriverProfile() {
               <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <User className="w-5 h-5" />
-                  Personal Information
+                  {t('pages.driver.profile.personal.title')}
                 </CardTitle>
                 <CardDescription className="text-indigo-100">
-                  Manage your personal details and professional information
+                  {t('pages.driver.profile.personal.description')}
                 </CardDescription>
               </div>
               <CardContent className="p-6">
@@ -519,7 +524,7 @@ export default function DriverProfile() {
                   {/* First Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      First Name
+                      {t('pages.driver.profile.personal.firstName')}
                     </label>
                     <div className="relative">
                       <Input
@@ -527,7 +532,7 @@ export default function DriverProfile() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your first name"
+                        placeholder={t('pages.driver.profile.personal.placeholders.firstName')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -545,7 +550,7 @@ export default function DriverProfile() {
                   {/* Last Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Last Name
+                      {t('pages.driver.profile.personal.lastName')}
                     </label>
                     <div className="relative">
                       <Input
@@ -553,7 +558,7 @@ export default function DriverProfile() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your last name"
+                        placeholder={t('pages.driver.profile.personal.placeholders.lastName')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -571,7 +576,7 @@ export default function DriverProfile() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Email Address
+                      {t('pages.driver.profile.personal.email')}
                     </label>
                     <div className="relative">
                       <Input
@@ -580,7 +585,7 @@ export default function DriverProfile() {
                         value={formData.email}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your email"
+                        placeholder={t('pages.driver.profile.personal.placeholders.email')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -598,7 +603,7 @@ export default function DriverProfile() {
                   {/* Phone Number */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Phone Number
+                      {t('pages.driver.profile.personal.phone')}
                     </label>
                     <div className="relative">
                       <Input
@@ -606,7 +611,7 @@ export default function DriverProfile() {
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your phone number"
+                        placeholder={t('pages.driver.profile.personal.placeholders.phone')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -624,7 +629,7 @@ export default function DriverProfile() {
                   {/* License Number */}
                   <div className="space-y-2 md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      License Number
+                      {t('pages.driver.profile.personal.licenseNumber')}
                     </label>
                     <div className="relative">
                       <Input
@@ -632,7 +637,7 @@ export default function DriverProfile() {
                         value={formData.licenseNumber}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your license number (8-10 digits)"
+                        placeholder={t('pages.driver.profile.personal.placeholders.licenseNumber')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -647,7 +652,7 @@ export default function DriverProfile() {
                     </div>
                     {isEditing && (
                       <p className="text-xs text-gray-500 mt-1">
-                        License number must be 8-10 digits
+                        {t('pages.driver.profile.alerts.licenseNumberFormat')}
                       </p>
                     )}
                   </div>
@@ -664,12 +669,12 @@ export default function DriverProfile() {
                       {isSaving ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+                          {t('common.saving')}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+                          {t('common.saveChanges')}
                         </>
                       )}
                     </Button>
@@ -679,7 +684,7 @@ export default function DriverProfile() {
                       className="flex-1 border-gray-300 hover:bg-gray-50"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </div>
                 )}
@@ -691,11 +696,8 @@ export default function DriverProfile() {
                       <Car className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-blue-900 mb-1">Professional Driver</h4>
-                      <p className="text-sm text-blue-700">
-                        You have access to view assigned trips, manage your schedule, 
-                        and update your professional information. Keep your license details current for compliance.
-                      </p>
+                      <h4 className="font-semibold text-blue-900 mb-1">{t('pages.driver.profile.footer.title')}</h4>
+                      <p className="text-sm text-blue-700">{t('pages.driver.profile.footer.message')}</p>
                     </div>
                   </div>
                 </div>

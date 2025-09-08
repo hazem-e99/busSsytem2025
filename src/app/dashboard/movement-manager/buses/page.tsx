@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -17,11 +18,12 @@ import {
   Trash2, 
   Eye
 } from 'lucide-react';
-import { busAPI, userAPI } from '@/lib/api';
+import { busAPI } from '@/lib/api';
 import { Bus as BusType, BusRequest, BusListParams } from '@/types/bus';
-import { formatDate } from '@/utils/formatDate';
+ 
 
 export default function MovementManagerBusesPage() {
+  const { t } = useI18n();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService'>('all');
   const [capacityFilter, setCapacityFilter] = useState<string>('all');
@@ -36,10 +38,8 @@ export default function MovementManagerBusesPage() {
     speed: 0
   });
   const [buses, setBuses] = useState<BusType[]>([]);
-  const [users, setUsers] = useState<unknown[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isAddingBus, setIsAddingBus] = useState(false);
-  const buildParams = (): BusListParams => {
+  const buildParams = useCallback((): BusListParams => {
     let minCapacity = 0;
     let maxCapacity = 0;
     if (capacityFilter === 'small') { minCapacity = 0; maxCapacity = 30; }
@@ -55,7 +55,7 @@ export default function MovementManagerBusesPage() {
       minCapacity,
       maxCapacity,
     };
-  };
+  }, [searchTerm, statusFilter, capacityFilter]);
 
   const handleApplyFilters = async () => {
     try {
@@ -84,10 +84,7 @@ export default function MovementManagerBusesPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [busesResponse, usersData] = await Promise.all([
-          busAPI.getAll(buildParams()),
-          userAPI.getAll()
-        ]);
+  const busesResponse = await busAPI.getAll(buildParams());
         
         // Extract data from the new API response format
         const cleanBusesData = busesResponse.data
@@ -100,18 +97,16 @@ export default function MovementManagerBusesPage() {
             status: bus.status || 'Active',
             speed: bus.speed || 0
           }));
-        setBuses(cleanBusesData);
-        setUsers(usersData);
+  setBuses(cleanBusesData);
       } catch (error) {
         console.error('Failed to fetch data:', error);
         setBuses([]);
-        setUsers([]);
       } finally {
         setIsLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [buildParams]);
 
   const filteredBuses = buses
     .filter(bus => {
@@ -143,7 +138,6 @@ export default function MovementManagerBusesPage() {
 
   const handleAddBus = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAddingBus(true);
     try {
       const existingBus = buses.find(bus => bus.busNumber === newBus.busNumber);
       if (existingBus) {
@@ -168,12 +162,10 @@ export default function MovementManagerBusesPage() {
         setShowAddModal(false);
         setNewBus({ busNumber: '', capacity: 50, status: 'Active', speed: 0 });
       }
-    } catch {
+  } catch {
       console.error('Failed to add bus:', Error);
       console.error(Error instanceof Error ? Error.message : 'Failed to add bus. Please try again.');
-    } finally {
-      setIsAddingBus(false);
-    }
+  }
   };
 
   const handleEditBus = async (e: React.FormEvent) => {
@@ -238,17 +230,7 @@ export default function MovementManagerBusesPage() {
 
   const busStats = getBusStats();
 
-  const getDriverName = (driverId?: string) => {
-    if (!driverId) return 'Not assigned';
-    const driver = users.find((u: any) => u.id === driverId);
-    return driver ? (driver as any).name : 'Unknown';
-  };
-
-  const getRouteName = (routeId?: string) => {
-    if (!routeId) return 'Not assigned';
-    // TODO: Implement route lookup when routes are available
-    return 'Not assigned';
-  };
+  // Note: driver/route lookup helpers removed for now as they are unused.
 
   if (isLoading) {
     return (
@@ -267,12 +249,12 @@ export default function MovementManagerBusesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Bus Management</h1>
-          <p className="text-gray-600">Manage fleet vehicles and their assignments</p>
+          <h1 className="text-3xl font-bold text-gray-900">{t('pages.movementManager.buses.title', 'Bus Management')}</h1>
+          <p className="text-gray-600">{t('pages.movementManager.buses.subtitle', 'Manage fleet vehicles and their assignments')}</p>
         </div>
         <Button onClick={() => setShowAddModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
-          Add New Bus
+          {t('pages.movementManager.buses.add', 'Add New Bus')}
         </Button>
       </div>
 
@@ -280,46 +262,46 @@ export default function MovementManagerBusesPage() {
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-blue-600">{busStats.total}</div>
-            <p className="text-xs text-gray-500">Total Buses</p>
+            <p className="text-xs text-gray-500">{t('pages.movementManager.buses.total', 'Total Buses')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-green-600">{busStats.active}</div>
-            <p className="text-xs text-gray-500">Active</p>
+            <p className="text-xs text-gray-500">{t('pages.movementManager.buses.active', 'Active')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-gray-600">{busStats.inactive}</div>
-            <p className="text-xs text-gray-500">Inactive</p>
+            <p className="text-xs text-gray-500">{t('pages.movementManager.buses.inactive', 'Inactive')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-purple-600">{busStats.totalCapacity}</div>
-            <p className="text-xs text-gray-500">Total Capacity</p>
+            <p className="text-xs text-gray-500">{t('pages.movementManager.buses.totalCapacity', 'Total Capacity')}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold text-indigo-600">{busStats.avgSpeed} km/h</div>
-            <p className="text-xs text-gray-500">Avg Speed</p>
+            <p className="text-xs text-gray-500">{t('pages.movementManager.buses.avgSpeed', 'Avg Speed')}</p>
           </CardContent>
         </Card>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Search & Filters</CardTitle>
-          <CardDescription>Find specific buses or filter by criteria</CardDescription>
+          <CardTitle>{t('pages.movementManager.buses.searchTitle', 'Search & Filters')}</CardTitle>
+          <CardDescription>{t('pages.movementManager.buses.searchSubtitle', 'Find specific buses or filter by criteria')}</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
-                placeholder="Search buses..."
+                placeholder={t('pages.movementManager.buses.searchPlaceholder', 'Search buses...')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -327,28 +309,28 @@ export default function MovementManagerBusesPage() {
             </div>
             <Select
               options={[
-                { value: 'all', label: 'All Status' },
-                { value: 'Active', label: 'Active' },
-                { value: 'Inactive', label: 'Inactive' },
-                { value: 'UnderMaintenance', label: 'Under Maintenance' },
-                { value: 'OutOfService', label: 'Out of Service' }
+                { value: 'all', label: t('pages.movementManager.buses.filters.allStatus', 'All Status') },
+                { value: 'Active', label: t('pages.movementManager.buses.filters.active', 'Active') },
+                { value: 'Inactive', label: t('pages.movementManager.buses.filters.inactive', 'Inactive') },
+                { value: 'UnderMaintenance', label: t('pages.movementManager.buses.filters.underMaintenance', 'Under Maintenance') },
+                { value: 'OutOfService', label: t('pages.movementManager.buses.filters.outOfService', 'Out of Service') }
               ]}
               value={statusFilter}
                              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService')}
             />
             <Select
               options={[
-                { value: 'all', label: 'All Capacities' },
-                { value: 'small', label: 'Small (≤30)' },
-                { value: 'medium', label: 'Medium (31-60)' },
-                { value: 'large', label: 'Large (>60)' }
+                { value: 'all', label: t('pages.movementManager.buses.filters.allCapacities', 'All Capacities') },
+                { value: 'small', label: t('pages.movementManager.buses.filters.small', 'Small (≤30)') },
+                { value: 'medium', label: t('pages.movementManager.buses.filters.medium', 'Medium (31-60)') },
+                { value: 'large', label: t('pages.movementManager.buses.filters.large', 'Large (>60)') }
               ]}
               value={capacityFilter}
               onChange={(e) => setCapacityFilter(e.target.value)}
             />
             <Button variant="outline" className="w-full" onClick={handleApplyFilters}>
               <Filter className="w-4 h-4 mr-2" />
-              Apply Filters
+              {t('pages.movementManager.buses.applyFilters', 'Apply Filters')}
             </Button>
           </div>
         </CardContent>
@@ -356,18 +338,18 @@ export default function MovementManagerBusesPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Fleet ({filteredBuses.length})</CardTitle>
-          <CardDescription>Manage bus assignments and status</CardDescription>
+          <CardTitle>{t('pages.movementManager.buses.fleet', 'Fleet')} ({filteredBuses.length})</CardTitle>
+          <CardDescription>{t('pages.movementManager.buses.fleetSubtitle', 'Manage bus assignments and status')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Bus</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Capacity</TableHead>
-                <TableHead>Speed</TableHead>
-                <TableHead>Actions</TableHead>
+                <TableHead>{t('pages.movementManager.buses.table.bus', 'Bus')}</TableHead>
+                <TableHead>{t('pages.movementManager.buses.table.status', 'Status')}</TableHead>
+                <TableHead>{t('pages.movementManager.buses.table.capacity', 'Capacity')}</TableHead>
+                <TableHead>{t('pages.movementManager.buses.table.speed', 'Speed')}</TableHead>
+                <TableHead>{t('pages.movementManager.buses.table.actions', 'Actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -379,8 +361,8 @@ export default function MovementManagerBusesPage() {
                         <Bus className="w-5 h-5 text-blue-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">Bus {bus.busNumber}</p>
-                        <p className="text-sm text-gray-500">ID: {bus.id}</p>
+                        <p className="font-medium text-gray-900">{t('pages.movementManager.buses.table.bus', 'Bus')} {bus.busNumber}</p>
+                        <p className="text-sm text-gray-500">{t('pages.movementManager.buses.table.id', 'ID')}: {bus.id}</p>
                       </div>
                     </div>
                   </TableCell>
@@ -390,17 +372,17 @@ export default function MovementManagerBusesPage() {
                         bus.status === 'Active' ? 'default' : 'secondary'
                       }
                     >
-                      {bus.status}
+                      {t(`pages.movementManager.buses.status.${bus.status}`, bus.status)}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <p className="font-medium">{bus.capacity} seats</p>
+                      <p className="font-medium">{bus.capacity} {t('pages.movementManager.buses.table.seatsLabel', 'seats')}</p>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">
-                      <p className="font-medium">{bus.speed} km/h</p>
+                      <p className="font-medium">{bus.speed} {t('pages.movementManager.buses.table.kmh', 'km/h')}</p>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -444,31 +426,31 @@ export default function MovementManagerBusesPage() {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Add New Bus"
+        title={t('pages.movementManager.buses.add', 'Add New Bus')}
         size="lg"
       >
         <form onSubmit={handleAddBus} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Bus Number
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t('pages.movementManager.buses.form.busNumber', 'Bus Number')}
               </label>
               <Input
                 value={newBus.busNumber}
                 onChange={(e) => setNewBus({ ...newBus, busNumber: e.target.value })}
-                placeholder="Enter bus number"
+                placeholder={t('pages.movementManager.buses.form.busNumberPh', 'Enter bus number')}
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Capacity
+                {t('pages.movementManager.buses.form.capacity', 'Capacity')}
               </label>
               <Input
                 type="number"
                 value={newBus.capacity}
                 onChange={(e) => setNewBus({ ...newBus, capacity: Number(e.target.value) })}
-                placeholder="Enter capacity"
+                placeholder={t('pages.movementManager.buses.form.capacityPh', 'Enter capacity')}
                 min="1"
                 max="100"
                 required
@@ -479,14 +461,14 @@ export default function MovementManagerBusesPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+                {t('pages.movementManager.buses.form.status', 'Status')}
               </label>
               <Select
                 options={[
-                  { value: 'Active', label: 'Active' },
-                  { value: 'Inactive', label: 'Inactive' },
-                  { value: 'UnderMaintenance', label: 'Under Maintenance' },
-                  { value: 'OutOfService', label: 'Out of Service' }
+                  { value: 'Active', label: t('pages.movementManager.buses.filters.active', 'Active') },
+                  { value: 'Inactive', label: t('pages.movementManager.buses.filters.inactive', 'Inactive') },
+                  { value: 'UnderMaintenance', label: t('pages.movementManager.buses.filters.underMaintenance', 'Under Maintenance') },
+                  { value: 'OutOfService', label: t('pages.movementManager.buses.filters.outOfService', 'Out of Service') }
                 ]}
                 value={newBus.status}
                 onChange={(e) => setNewBus({ ...newBus, status: e.target.value as 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService' })}
@@ -495,13 +477,13 @@ export default function MovementManagerBusesPage() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Speed (km/h)
+                {t('pages.movementManager.buses.form.speed', 'Speed (km/h)')}
               </label>
               <Input
                 type="number"
                 value={newBus.speed}
                 onChange={(e) => setNewBus({ ...newBus, speed: Number(e.target.value) })}
-                placeholder="Enter speed"
+                placeholder={t('pages.movementManager.buses.form.speedPh', 'Enter speed')}
                 min="0"
                 max="200"
                 required
@@ -515,10 +497,10 @@ export default function MovementManagerBusesPage() {
               variant="outline"
               onClick={() => setShowAddModal(false)}
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </Button>
             <Button type="submit">
-              Add Bus
+              {t('pages.movementManager.buses.add', 'Add New Bus')}
             </Button>
           </div>
         </form>
@@ -527,7 +509,7 @@ export default function MovementManagerBusesPage() {
       <Modal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
-        title="Edit Bus"
+        title={t('pages.movementManager.buses.edit', 'Edit Bus')}
         size="lg"
       >
         {selectedBus && (
@@ -535,24 +517,24 @@ export default function MovementManagerBusesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Bus Number
+                  {t('pages.movementManager.buses.form.busNumber', 'Bus Number')}
                 </label>
                 <Input
                   value={selectedBus.busNumber}
                   onChange={(e) => setSelectedBus({ ...selectedBus, busNumber: e.target.value })}
-                  placeholder="Enter bus number"
+                  placeholder={t('pages.movementManager.buses.form.busNumberPh', 'Enter bus number')}
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Capacity
+                  {t('pages.movementManager.buses.form.capacity', 'Capacity')}
                 </label>
                 <Input
                   type="number"
                   value={selectedBus.capacity}
                   onChange={(e) => setSelectedBus({ ...selectedBus, capacity: Number(e.target.value) })}
-                  placeholder="Enter capacity"
+                  placeholder={t('pages.movementManager.buses.form.capacityPh', 'Enter capacity')}
                   min="1"
                   max="100"
                   required
@@ -563,14 +545,14 @@ export default function MovementManagerBusesPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Status
+                  {t('pages.movementManager.buses.form.status', 'Status')}
                 </label>
                 <Select
                   options={[
-                    { value: 'Active', label: 'Active' },
-                    { value: 'Inactive', label: 'Inactive' },
-                    { value: 'UnderMaintenance', label: 'Under Maintenance' },
-                    { value: 'OutOfService', label: 'Out of Service' }
+                    { value: 'Active', label: t('pages.movementManager.buses.filters.active', 'Active') },
+                    { value: 'Inactive', label: t('pages.movementManager.buses.filters.inactive', 'Inactive') },
+                    { value: 'UnderMaintenance', label: t('pages.movementManager.buses.filters.underMaintenance', 'Under Maintenance') },
+                    { value: 'OutOfService', label: t('pages.movementManager.buses.filters.outOfService', 'Out of Service') }
                   ]}
                   value={selectedBus.status}
                   onChange={(e) => setSelectedBus({ ...selectedBus, status: e.target.value as 'Active' | 'Inactive' | 'UnderMaintenance' | 'OutOfService' })}
@@ -579,13 +561,13 @@ export default function MovementManagerBusesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Speed (km/h)
+                  {t('pages.movementManager.buses.form.speed', 'Speed (km/h)')}
                 </label>
                 <Input
                   type="number"
                   value={selectedBus.speed}
                   onChange={(e) => setSelectedBus({ ...selectedBus, speed: Number(e.target.value) })}
-                  placeholder="Enter speed"
+                  placeholder={t('pages.movementManager.buses.form.speedPh', 'Enter speed')}
                   min="0"
                   max="200"
                   required
@@ -599,10 +581,10 @@ export default function MovementManagerBusesPage() {
                 variant="outline"
                 onClick={() => setShowEditModal(false)}
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </Button>
               <Button type="submit">
-                Update Bus
+                {t('pages.movementManager.buses.update', 'Update Bus')}
               </Button>
             </div>
           </form>
@@ -612,7 +594,7 @@ export default function MovementManagerBusesPage() {
       <Modal
         isOpen={showViewModal}
         onClose={() => setShowViewModal(false)}
-        title="Bus Details"
+        title={t('pages.movementManager.buses.details', 'Bus Details')}
         size="md"
       >
         {selectedBus && (
@@ -622,29 +604,29 @@ export default function MovementManagerBusesPage() {
                 <Bus className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-lg font-medium">Bus {selectedBus.busNumber}</h3>
-                <p className="text-sm text-gray-500">ID: {selectedBus.id}</p>
+                <h3 className="text-lg font-medium">{t('pages.movementManager.buses.table.bus', 'Bus')} {selectedBus.busNumber}</h3>
+                <p className="text-sm text-gray-500">{t('pages.movementManager.buses.table.id', 'ID')}: {selectedBus.id}</p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-gray-500">Status:</span>
+                <span className="text-gray-500">{t('pages.movementManager.buses.table.status', 'Status')}:</span>
                 <Badge 
                   variant={
                     selectedBus.status === 'Active' ? 'default' : 'secondary'
                   }
                 >
-                  {selectedBus.status}
+                  {t(`pages.movementManager.buses.status.${selectedBus.status}`, selectedBus.status)}
                 </Badge>
               </div>
               <div>
-                <span className="text-gray-500">Capacity:</span>
-                <p className="font-medium">{selectedBus.capacity} seats</p>
+                <span className="text-gray-500">{t('pages.movementManager.buses.table.capacity', 'Capacity')}:</span>
+                <p className="font-medium">{selectedBus.capacity} {t('pages.movementManager.buses.table.seatsLabel', 'seats')}</p>
               </div>
               <div>
-                <span className="text-gray-500">Speed:</span>
-                <p className="font-medium">{selectedBus.speed} km/h</p>
+                <span className="text-gray-500">{t('pages.movementManager.buses.table.speed', 'Speed')}:</span>
+                <p className="font-medium">{selectedBus.speed} {t('pages.movementManager.buses.table.kmh', 'km/h')}</p>
               </div>
             </div>
           </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import { tripAPI, tripBookingAPI, studentSubscriptionAPI } from '@/lib/api';
 import { TripViewModel } from '@/types/trip';
@@ -23,23 +23,19 @@ import {
   Bus, 
   Users, 
   CheckCircle,
-  AlertCircle,
-  Route,
-  Calendar as CalendarIcon,
-  Clock as ClockIcon,
-  MapPin as MapPinIcon,
-  Bus as BusIcon,
-  Users as UsersIcon
+  AlertCircle
 } from 'lucide-react';
+import { useI18n } from '@/contexts/LanguageContext';
 
 // Use existing types from the codebase
 type Trip = TripViewModel;
 type TripBooking = TripBookingViewModel;
 
 type TripStatus = 'Scheduled' | 'InProgress' | 'Completed' | 'Cancelled' | 'Delayed';
-type BookingStatus = 'Confirmed' | 'Cancelled' | 'NoShow' | 'Completed';
+// removed unused BookingStatus type
 
 export default function BookTripPage() {
+  const { t, isRTL } = useI18n();
   const [trips, setTrips] = useState<Trip[]>([]);
   const [bookings, setBookings] = useState<TripBooking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,9 +52,31 @@ export default function BookTripPage() {
   const [checkingBookingStatus, setCheckingBookingStatus] = useState<Set<number>>(new Set());
   const { showToast } = useToast();
 
-  useEffect(() => { load(); }, []);
+  const checkTripBookingStatus = useCallback(async (tripId: number) => {
+    try {
+      setCheckingBookingStatus(prev => new Set(prev).add(tripId));
+      const hasBooked = await tripBookingAPI.hasBooked(tripId);
+      setBookedTrips(prev => {
+        const newSet = new Set(prev);
+        if (hasBooked) {
+          newSet.add(tripId);
+        } else {
+          newSet.delete(tripId);
+        }
+        return newSet;
+      });
+    } catch (error) {
+      console.error('Error checking booking status for trip', tripId, error);
+    } finally {
+      setCheckingBookingStatus(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tripId);
+        return newSet;
+      });
+    }
+  }, []);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
       console.log('🔍 Loading trips data...');
@@ -80,25 +98,28 @@ export default function BookTripPage() {
       setTrips(tripsData || []);
       setBookings(bookingsData || []);
 
-      // Check booking status for each trip
+      // Check booking status for each trip (do not block UI)
       if (tripsData && tripsData.length > 0) {
-        // Check booking status for all trips in parallel
         const bookingChecks = tripsData.map(trip => checkTripBookingStatus(trip.id));
-        await Promise.all(bookingChecks);
+        await Promise.allSettled(bookingChecks);
         
         showToast({ 
           type: 'success', 
-          title: 'Trips Loaded Successfully', 
-          message: `Found ${tripsData.length} available trips` 
+          title: t('pages.student.bookTrip.toast.loadedTitle', 'Trips Loaded Successfully'), 
+          message: t('pages.student.bookTrip.toast.loadedMsg', `Found ${tripsData.length} available trips`) 
         });
       }
     } catch (error) {
       console.error('❌ Error loading data:', error);
-      showToast({ type: 'error', title: 'Failed to load trips', message: 'Please try again' });
+      showToast({ type: 'error', title: t('pages.student.bookTrip.toast.loadFailedTitle', 'Failed to load trips'), message: t('pages.student.bookTrip.toast.tryAgain', 'Please try again') });
     } finally {
       setLoading(false);
     }
-  };
+  }, [showToast, checkTripBookingStatus, t]);
+
+  // Run once on mount to avoid re-triggering load due to changing deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(); }, []);
 
   // Get unique statuses for filter
   const statusOptions = useMemo(() => {
@@ -108,7 +129,7 @@ export default function BookTripPage() {
   }, [trips]);
 
   // Filter by date range
-  const getDateRange = (filter: string) => {
+  const getDateRange = useCallback((filter: string) => {
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     
@@ -127,7 +148,7 @@ export default function BookTripPage() {
       default:
         return null;
     }
-  };
+  }, [customDate]);
 
   const filteredTrips = useMemo(() => {
     console.log('🔄 Filtering trips with:', { search, statusFilter, dateFilter });
@@ -153,32 +174,10 @@ export default function BookTripPage() {
       
       return matchesSearch && matchesStatus && matchesDate;
     });
-  }, [trips, search, statusFilter, dateFilter, customDate]);
+  }, [trips, search, statusFilter, dateFilter, getDateRange]);
 
   // Check if trip is booked using the new API
-  const checkTripBookingStatus = async (tripId: number) => {
-    try {
-      setCheckingBookingStatus(prev => new Set(prev).add(tripId));
-      const hasBooked = await tripBookingAPI.hasBooked(tripId);
-      setBookedTrips(prev => {
-        const newSet = new Set(prev);
-        if (hasBooked) {
-          newSet.add(tripId);
-        } else {
-          newSet.delete(tripId);
-        }
-        return newSet;
-      });
-    } catch (error) {
-      console.error('Error checking booking status for trip', tripId, error);
-    } finally {
-      setCheckingBookingStatus(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(tripId);
-        return newSet;
-      });
-    }
-  };
+  
 
   // Check if trip is booked (legacy method for backward compatibility)
   const isTripBooked = (tripId: number) => {
@@ -186,6 +185,24 @@ export default function BookTripPage() {
       booking.tripId === tripId && 
       (booking.status === 'Confirmed' || booking.status === 'Completed')
     );
+  };
+
+  // Localized status label
+  const statusLabel = (status: TripStatus) => {
+    switch (status) {
+      case 'Scheduled':
+        return t('pages.trips.status.scheduled', 'Scheduled');
+      case 'InProgress':
+        return t('pages.trips.status.inProgress', 'In Progress');
+      case 'Completed':
+        return t('pages.trips.status.completed', 'Completed');
+      case 'Cancelled':
+        return t('pages.trips.status.cancelled', 'Cancelled');
+      case 'Delayed':
+        return t('pages.trips.status.delayed', 'Delayed');
+      default:
+        return status;
+    }
   };
 
   // Get trip details
@@ -198,7 +215,7 @@ export default function BookTripPage() {
       setShowTripDetails(true);
     } catch (error) {
       console.error('❌ Error fetching trip details:', error);
-      showToast({ type: 'error', title: 'Failed to load trip details', message: 'Please try again' });
+      showToast({ type: 'error', title: t('pages.student.bookTrip.toast.tripDetailsFailedTitle', 'Failed to load trip details'), message: t('pages.student.bookTrip.toast.tryAgain', 'Please try again') });
     }
   };
 
@@ -218,16 +235,16 @@ export default function BookTripPage() {
       } else {
         showToast({ 
           type: 'error', 
-          title: 'Error',
-          message: 'Failed to load trip details'
+          title: t('common.error', 'Error'),
+          message: t('pages.student.bookTrip.toast.tripDetailsFailedTitle', 'Failed to load trip details')
         });
       }
     } catch (error) {
       console.error('❌ Error fetching trip details:', error);
       showToast({ 
         type: 'error', 
-        title: 'Error',
-        message: 'Failed to load trip details'
+        title: t('common.error', 'Error'),
+        message: t('pages.student.bookTrip.toast.tripDetailsFailedTitle', 'Failed to load trip details')
       });
     } finally {
       setLoading(false);
@@ -237,7 +254,7 @@ export default function BookTripPage() {
   // Confirm booking
   const handleConfirmBooking = async () => {
     if (!selectedTrip || !selectedStopId) {
-      showToast({ type: 'error', title: 'Please select a pickup location', message: 'You must choose a stop point' });
+  showToast({ type: 'error', title: t('pages.student.bookTrip.toast.pickupRequiredTitle', 'Please select a pickup location'), message: t('pages.student.bookTrip.toast.pickupRequiredMsg', 'You must choose a stop point') });
       return;
     }
 
@@ -249,8 +266,8 @@ export default function BookTripPage() {
       if (!currentStudentId) {
         showToast({ 
           type: 'error', 
-          title: 'Authentication Error',
-          message: 'Please log in again to book a trip'
+          title: t('pages.student.bookTrip.toast.authErrorTitle', 'Authentication Error'),
+          message: t('pages.student.bookTrip.toast.authErrorMsg', 'Please log in again to book a trip')
         });
         return;
       }
@@ -264,8 +281,8 @@ export default function BookTripPage() {
       if (!activeSubscription) {
         showToast({ 
           type: 'error', 
-          title: 'No Active Subscription',
-          message: 'You need an active subscription to book a trip'
+          title: t('pages.student.bookTrip.toast.noActiveSubTitle', 'No Active Subscription'),
+          message: t('pages.student.bookTrip.toast.noActiveSubMsg', 'You need an active subscription to book a trip')
         });
         return;
       }
@@ -284,8 +301,8 @@ export default function BookTripPage() {
       if (result?.success) {
         showToast({ 
           type: 'success', 
-          title: 'Booking Confirmed!',
-          message: 'Your trip has been successfully booked'
+          title: t('pages.student.bookTrip.toast.bookingConfirmedTitle', 'Booking Confirmed!'),
+          message: t('pages.student.bookTrip.toast.bookingConfirmedMsg', 'Your trip has been successfully booked')
         });
         setShowBookingModal(false);
         setSelectedStopId(null);
@@ -301,8 +318,8 @@ export default function BookTripPage() {
         const errorMessage = result?.message || result?.errorCode || 'Booking failed';
         showToast({ 
           type: 'error', 
-          title: 'Booking Failed',
-          message: `Error: ${errorMessage}`
+          title: t('pages.student.bookTrip.toast.bookingFailedTitle', 'Booking Failed'),
+          message: `${t('common.error', 'Error')}: ${errorMessage}`
         });
         return;
       }
@@ -314,7 +331,7 @@ export default function BookTripPage() {
         name: error.name
       });
       
-      let errorMessage = 'Please try again';
+      let errorMessage = t('pages.student.bookTrip.toast.tryAgain', 'Please try again');
       if (error.message) {
         errorMessage = error.message;
       } else if (error.status) {
@@ -323,8 +340,8 @@ export default function BookTripPage() {
       
       showToast({ 
         type: 'error', 
-        title: 'Booking Failed',
-        message: `Error: ${errorMessage}`
+        title: t('pages.student.bookTrip.toast.bookingFailedTitle', 'Booking Failed'),
+        message: `${t('common.error', 'Error')}: ${errorMessage}`
       });
     }
   };
@@ -343,21 +360,21 @@ export default function BookTripPage() {
   const getStatusBadge = (status: TripStatus) => {
     switch (status) {
       case 'Scheduled':
-        return <Badge className="bg-blue-100 text-blue-800"><Calendar className="w-3 h-3 mr-1" />Scheduled</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800"><Calendar className="w-3 h-3 mr-1" />{statusLabel(status)}</Badge>;
       case 'InProgress':
-        return <Badge className="bg-green-100 text-green-800"><Clock className="w-3 h-3 mr-1" />In Progress</Badge>;
+        return <Badge className="bg-green-100 text-green-800"><Clock className="w-3 h-3 mr-1" />{statusLabel(status)}</Badge>;
       case 'Completed':
-        return <Badge className="bg-gray-100 text-gray-800"><CheckCircle className="w-3 h-3 mr-1" />Completed</Badge>;
+        return <Badge className="bg-gray-100 text-gray-800"><CheckCircle className="w-3 h-3 mr-1" />{statusLabel(status)}</Badge>;
       case 'Cancelled':
-        return <Badge className="bg-red-100 text-red-800"><X className="w-3 h-3 mr-1" />Cancelled</Badge>;
+        return <Badge className="bg-red-100 text-red-800"><X className="w-3 h-3 mr-1" />{statusLabel(status)}</Badge>;
       case 'Delayed':
-        return <Badge className="bg-orange-100 text-orange-800"><AlertCircle className="w-3 h-3 mr-1" />Delayed</Badge>;
+        return <Badge className="bg-orange-100 text-orange-800"><AlertCircle className="w-3 h-3 mr-1" />{statusLabel(status)}</Badge>;
       default:
         return <Badge className="bg-gray-100 text-gray-800">{status}</Badge>;
     }
   };
 
-  if (loading) return <div className="p-4 sm:p-6">Loading...</div>;
+  if (loading) return <div className="p-4 sm:p-6">{t('common.loading', 'Loading...')}</div>;
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
@@ -365,14 +382,14 @@ export default function BookTripPage() {
       <div className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-green-50 via-white to-blue-50 p-5 sm:p-6 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-text-primary tracking-tight">Book Your Trip</h1>
-            <p className="text-text-secondary mt-1">Find and book available bus trips</p>
+            <h1 className="text-3xl font-bold text-text-primary tracking-tight">{t('pages.student.bookTrip.title', 'Book Your Trip')}</h1>
+            <p className="text-text-secondary mt-1">{t('pages.student.bookTrip.subtitle', 'Find and book available bus trips')}</p>
           </div>
           <div className="w-full sm:w-64">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input 
-                placeholder="Search trips..." 
+                placeholder={t('pages.student.bookTrip.search', 'Search trips...')} 
                 value={search} 
                 onChange={e => setSearch(e.target.value)}
                 className="pl-10"
@@ -384,21 +401,21 @@ export default function BookTripPage() {
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Bus className="w-5 h-5 text-green-600" />
             <div>
-              <p className="text-sm text-text-secondary">Available Trips</p>
+              <p className="text-sm text-text-secondary">{t('pages.student.bookTrip.availableTrips', 'Available Trips')}</p>
               <p className="font-semibold">{filteredTrips.length}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-blue-600" />
             <div>
-              <p className="text-sm text-text-secondary">My Bookings</p>
+              <p className="text-sm text-text-secondary">{t('pages.student.bookTrip.myBookings', 'My Bookings')}</p>
               <p className="font-semibold">{bookings.length}</p>
             </div>
           </div>
           <div className="rounded-xl border bg-white/70 backdrop-blur p-4 flex items-center gap-3">
             <Users className="w-5 h-5 text-purple-600" />
             <div>
-              <p className="text-sm text-text-secondary">Total Seats</p>
+              <p className="text-sm text-text-secondary">{t('pages.student.bookTrip.totalSeats', 'Total Seats')}</p>
               <p className="font-semibold">{trips.reduce((sum, trip) => sum + trip.totalSeats, 0)}</p>
             </div>
           </div>
@@ -411,7 +428,7 @@ export default function BookTripPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-2">
               <Filter className="w-5 h-5" />
-              <CardTitle>Advanced Filters</CardTitle>
+              <CardTitle>{t('pages.student.bookTrip.advancedFilters', 'Advanced Filters')}</CardTitle>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               {hasActiveFilters && (
@@ -422,7 +439,7 @@ export default function BookTripPage() {
                   className="text-red-600 hover:text-red-700"
                 >
                   <X className="w-4 h-4 mr-1" />
-                  Clear All
+                  {t('pages.student.bookTrip.clearAll', 'Clear All')}
                 </Button>
               )}
               <Button
@@ -430,7 +447,7 @@ export default function BookTripPage() {
                 size="sm"
                 onClick={() => setShowFilters(!showFilters)}
               >
-                {showFilters ? 'Hide Filters' : 'Show Filters'}
+                {showFilters ? t('pages.student.bookTrip.hideFilters', 'Hide Filters') : t('pages.student.bookTrip.showFilters', 'Show Filters')}
               </Button>
             </div>
           </div>
@@ -440,42 +457,42 @@ export default function BookTripPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Status Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Status</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.trips.table.status', 'Status')}</label>
                 <Select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value as TripStatus | 'all')}
                 >
-                  <option value="all">All Status</option>
+                  <option value="all">{t('pages.student.bookTrip.filters.allStatus', 'All Status')}</option>
                   {statusOptions.map(status => (
-                    <option key={status} value={status}>{status}</option>
+                    <option key={status} value={status}>{statusLabel(status)}</option>
                   ))}
                 </Select>
               </div>
 
               {/* Date Filter */}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Date Range</label>
+                <label className="text-sm font-medium text-gray-700">{t('pages.student.bookTrip.filters.dateRange', 'Date Range')}</label>
                 <Select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value as any)}
                 >
-                  <option value="all">All Dates</option>
-                  <option value="today">Today</option>
-                  <option value="tomorrow">Tomorrow</option>
-                  <option value="week">This Week</option>
-                  <option value="custom">Custom Date</option>
+                  <option value="all">{t('pages.student.bookTrip.filters.allDates', 'All Dates')}</option>
+                  <option value="today">{t('pages.student.bookTrip.filters.today', 'Today')}</option>
+                  <option value="tomorrow">{t('pages.student.bookTrip.filters.tomorrow', 'Tomorrow')}</option>
+                  <option value="week">{t('pages.student.bookTrip.filters.thisWeek', 'This Week')}</option>
+                  <option value="custom">{t('pages.student.bookTrip.filters.customDate', 'Custom Date')}</option>
                 </Select>
               </div>
 
               {/* Custom Date */}
               {dateFilter === 'custom' && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700">Select Date</label>
+                  <label className="text-sm font-medium text-gray-700">{t('pages.student.bookTrip.filters.selectDate', 'Select Date')}</label>
                   <Input
                     type="date"
                     value={customDate}
                     onChange={(e) => setCustomDate(e.target.value)}
-                    placeholder="Choose date"
+                    placeholder={t('pages.student.bookTrip.filters.chooseDate', 'Choose date')}
                   />
                 </div>
               )}
@@ -489,15 +506,15 @@ export default function BookTripPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bus className="w-5 h-5" />
-            Available Trips
-            {hasActiveFilters && (
+            {t('pages.student.bookTrip.availableTrips', 'Available Trips')}
+      {hasActiveFilters && (
               <Badge variant="outline" className="ml-2">
-                {filteredTrips.length} filtered
+        {filteredTrips.length} {t('pages.student.bookTrip.filtered', 'filtered')}
               </Badge>
             )}
           </CardTitle>
           <CardDescription>
-            {filteredTrips.length} trip(s) available for booking
+            {filteredTrips.length} {t('pages.student.bookTrip.availableForBooking', 'trip(s) available for booking')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -505,29 +522,27 @@ export default function BookTripPage() {
           <Table className="min-w-[820px] sm:min-w-0">
             <TableHeader>
               <TableRow>
-                <TableHead>Bus & Route</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead>Seats</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
+        <TableHead>{t('pages.student.bookTrip.table.busRoute', 'Bus & Route')}</TableHead>
+        <TableHead>{t('pages.trips.table.dateTime', 'Date & Time')}</TableHead>
+        <TableHead>{t('pages.student.bookTrip.table.seats', 'Seats')}</TableHead>
+        <TableHead>{t('pages.trips.table.status', 'Status')}</TableHead>
+        <TableHead>{t('pages.trips.table.actions', 'Actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredTrips.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} className="text-center py-8">
-                    <div className="flex flex-col items-center space-y-2">
+                      <div className="flex flex-col items-center space-y-2">
                       <AlertCircle className="w-12 h-12 text-gray-400" />
-                      <div className="text-lg font-medium text-gray-500">No Trips Found</div>
-                      <div className="text-sm text-gray-400">
-                        No trips match your current filters
-                      </div>
+                        <div className="text-lg font-medium text-gray-500">{t('pages.student.bookTrip.noTrips', 'No Trips Found')}</div>
+                        <div className="text-sm text-gray-400">{t('pages.student.bookTrip.noTripsMsg', 'No trips match your current filters')}</div>
                       <Button 
                         onClick={load} 
                         variant="outline" 
                         className="mt-2"
                       >
-                        Refresh Data
+                        {t('pages.student.bookTrip.refresh', 'Refresh Data')}
                       </Button>
                     </div>
                   </TableCell>
@@ -543,10 +558,10 @@ export default function BookTripPage() {
                         </div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <MapPin className="w-3 h-3" />
-                          {trip.startLocation} → {trip.endLocation}
+                          {trip.startLocation} {isRTL ? '←' : '→'} {trip.endLocation}
                         </div>
                         <div className="text-xs text-gray-400">
-                          Driver: {trip.driverName || 'N/A'} | Conductor: {trip.conductorName || 'N/A'}
+                          {t('pages.trips.form.fields.driver', 'Driver')}: {trip.driverName || t('common.na', 'N/A')} | {t('pages.trips.form.fields.conductor', 'Conductor')}: {trip.conductorName || t('common.na', 'N/A')}
                         </div>
                       </div>
                     </TableCell>
@@ -558,17 +573,21 @@ export default function BookTripPage() {
                         </div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {trip.departureTimeOnly} - {trip.arrivalTimeOnly}
+                          {isRTL ? (
+                            <>{trip.arrivalTimeOnly} - {trip.departureTimeOnly}</>
+                          ) : (
+                            <>{trip.departureTimeOnly} - {trip.arrivalTimeOnly}</>
+                          )}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium text-green-600">
-                          {trip.avalableSeates} / {trip.totalSeats} available
+                          {trip.avalableSeates} / {trip.totalSeats} {t('pages.student.bookTrip.available', 'available')}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {trip.bookedSeats} booked
+                          {trip.bookedSeats} {t('pages.student.bookTrip.booked', 'booked')}
                         </div>
                       </div>
                     </TableCell>
@@ -583,7 +602,7 @@ export default function BookTripPage() {
                           onClick={() => handleViewTrip(trip.id)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
-                          View
+                          {t('pages.student.bookTrip.view', 'View')}
                         </Button>
                         {isTripBooked(trip.id) ? (
                           <Button
@@ -592,7 +611,7 @@ export default function BookTripPage() {
                             className="bg-green-600 text-white"
                           >
                             <CheckCircle className="w-4 h-4 mr-1" />
-                            Already Booked
+                            {t('pages.student.bookTrip.alreadyBooked', 'Already Booked')}
                           </Button>
                         ) : checkingBookingStatus.has(trip.id) ? (
                           <Button
@@ -600,7 +619,7 @@ export default function BookTripPage() {
                             disabled
                             className="bg-gray-400 text-white"
                           >
-                            Checking...
+                            {t('pages.student.bookTrip.checking', 'Checking...')}
                           </Button>
                         ) : (
                           <Button
@@ -608,7 +627,7 @@ export default function BookTripPage() {
                             onClick={() => handleBookTrip(trip)}
                             disabled={trip.avalableSeates === 0 || trip.status !== 'Scheduled'}
                           >
-                            Book Now
+                            {t('pages.student.bookTrip.bookNow', 'Book Now')}
                           </Button>
                         )}
                       </div>
@@ -626,7 +645,7 @@ export default function BookTripPage() {
       <Modal
         isOpen={showTripDetails}
         onClose={() => setShowTripDetails(false)}
-        title="Trip Details"
+        title={t('pages.student.bookTrip.tripDetailsTitle', 'Trip Details')}
         size="lg"
       >
         {selectedTrip && (
@@ -634,48 +653,48 @@ export default function BookTripPage() {
             {/* Trip Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-3">
-                <h3 className="font-semibold text-lg">Trip Information</h3>
+        <h3 className="font-semibold text-lg">{t('pages.student.bookTrip.tripInfo', 'Trip Information')}</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Bus className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Bus:</span>
-                    <span>{selectedTrip.busNumber || 'Bus #' + selectedTrip.id}</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.bus', 'Bus')}:</span>
+          <span>{selectedTrip.busNumber || t('pages.student.bookTrip.fields.bus', 'Bus') + ' #' + selectedTrip.id}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Driver:</span>
-                    <span>{selectedTrip.driverName || 'N/A'}</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.driver', 'Driver')}:</span>
+          <span>{selectedTrip.driverName || t('common.na', 'N/A')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Conductor:</span>
-                    <span>{selectedTrip.conductorName || 'N/A'}</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.conductor', 'Conductor')}:</span>
+          <span>{selectedTrip.conductorName || t('common.na', 'N/A')}</span>
                   </div>
                 </div>
               </div>
               
               <div className="space-y-3">
-                <h3 className="font-semibold text-lg">Route & Timing</h3>
+        <h3 className="font-semibold text-lg">{t('pages.student.bookTrip.routeAndTiming', 'Route & Timing')}</h3>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">From:</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.origin', 'Origin')}:</span>
                     <span>{selectedTrip.startLocation}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">To:</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.destination', 'Destination')}:</span>
                     <span>{selectedTrip.endLocation}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Date:</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.date', 'Date')}:</span>
                     <span>{new Date(selectedTrip.tripDate).toLocaleDateString()}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Time:</span>
-                    <span>{selectedTrip.departureTimeOnly} - {selectedTrip.arrivalTimeOnly}</span>
+                    <span className="font-medium">{isRTL ? t('pages.student.bookTrip.fields.timeRangeLabelRtl', 'Time (Arrival / Departure)') : t('pages.student.bookTrip.fields.timeRangeLabel', 'Time (Departure / Arrival)')}:</span>
+                    <span>{isRTL ? `${selectedTrip.arrivalTimeOnly} - ${selectedTrip.departureTimeOnly}` : `${selectedTrip.departureTimeOnly} - ${selectedTrip.arrivalTimeOnly}`}</span>
                   </div>
                 </div>
               </div>
@@ -683,27 +702,27 @@ export default function BookTripPage() {
 
             {/* Seats Info */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold text-lg mb-3">Seat Availability</h3>
+              <h3 className="font-semibold text-lg mb-3">{t('pages.student.bookTrip.seatAvailability', 'Seat Availability')}</h3>
               <div className="grid grid-cols-3 gap-4 text-center">
                 <div>
                   <div className="text-2xl font-bold text-green-600">{selectedTrip.avalableSeates}</div>
-                  <div className="text-sm text-gray-600">Available</div>
+                  <div className="text-sm text-gray-600">{t('pages.student.bookTrip.available', 'available')}</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-blue-600">{selectedTrip.bookedSeats}</div>
-                  <div className="text-sm text-gray-600">Booked</div>
+                  <div className="text-sm text-gray-600">{t('pages.student.bookTrip.booked', 'booked')}</div>
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-gray-600">{selectedTrip.totalSeats}</div>
-                  <div className="text-sm text-gray-600">Total</div>
+                  <div className="text-sm text-gray-600">{t('pages.student.bookTrip.total', 'Total')}</div>
                 </div>
               </div>
             </div>
 
             {/* Stop Locations */}
-            {selectedTrip.stopLocations && selectedTrip.stopLocations.length > 0 && (
+      {selectedTrip.stopLocations && selectedTrip.stopLocations.length > 0 && (
               <div>
-                <h3 className="font-semibold text-lg mb-3">Stop Locations</h3>
+        <h3 className="font-semibold text-lg mb-3">{t('pages.student.bookTrip.stopsTitle', 'Stop Locations')}</h3>
                 <div className="space-y-2">
                   {selectedTrip.stopLocations.map((stop, index) => (
                     <div key={stop.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -714,7 +733,7 @@ export default function BookTripPage() {
                         <div>
                           <div className="font-medium">{stop.address}</div>
                           <div className="text-sm text-gray-500">
-                            Arrival: {stop.arrivalTimeOnly} | Departure: {stop.departureTimeOnly}
+              {t('pages.student.bookTrip.stopArrival', 'Arrival')}: {stop.arrivalTimeOnly} | {t('pages.student.bookTrip.stopDeparture', 'Departure')}: {stop.departureTimeOnly}
                           </div>
                         </div>
                       </div>
@@ -729,7 +748,7 @@ export default function BookTripPage() {
                 variant="outline"
                 onClick={() => setShowTripDetails(false)}
               >
-                Close
+                {t('common.close', 'Close')}
               </Button>
               {!isTripBooked(selectedTrip.id) && !checkingBookingStatus.has(selectedTrip.id) && (
                 <Button
@@ -739,7 +758,7 @@ export default function BookTripPage() {
                   }}
                   disabled={selectedTrip.avalableSeates === 0 || selectedTrip.status !== 'Scheduled'}
                 >
-                  Book This Trip
+                  {t('pages.student.bookTrip.bookNow', 'Book Now')}
                 </Button>
               )}
               {isTripBooked(selectedTrip.id) && (
@@ -748,7 +767,7 @@ export default function BookTripPage() {
                   className="bg-green-600 text-white"
                 >
                   <CheckCircle className="w-4 h-4 mr-1" />
-                  Already Booked
+                  {t('pages.student.bookTrip.alreadyBooked', 'Already Booked')}
                 </Button>
               )}
             </div>
@@ -760,42 +779,42 @@ export default function BookTripPage() {
       <Modal
         isOpen={showBookingModal}
         onClose={() => setShowBookingModal(false)}
-        title="Book Trip"
+        title={t('pages.student.bookTrip.bookTrip', 'Book Trip')}
         size="md"
       >
         {selectedTrip && (
           <div className="space-y-6">
             {/* Trip Summary */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border">
-              <h3 className="font-bold text-xl mb-4 text-gray-800">Trip Details</h3>
+        <h3 className="font-bold text-xl mb-4 text-gray-800">{t('pages.student.bookTrip.tripDetailsTitle', 'Trip Details')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div className="flex items-center space-x-2">
                   <Bus className="h-4 w-4 text-blue-600" />
-                  <span className="font-medium">Bus:</span>
-                  <span>{selectedTrip.busNumber || 'Bus #' + selectedTrip.id}</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.bus', 'Bus')}:</span>
+          <span>{selectedTrip.busNumber || t('pages.student.bookTrip.fields.bus', 'Bus') + ' #' + selectedTrip.id}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <MapPin className="h-4 w-4 text-green-600" />
-                  <span className="font-medium">Route:</span>
-                  <span>{selectedTrip.startLocation} → {selectedTrip.endLocation}</span>
+          <span className="font-medium">{t('pages.student.bookTrip.routeAndTiming', 'Route & Timing')}:</span>
+                  <span>{selectedTrip.startLocation} {isRTL ? '←' : '→'} {selectedTrip.endLocation}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-purple-600" />
-                  <span className="font-medium">Date:</span>
+          <span className="font-medium">{t('pages.student.bookTrip.fields.date', 'Date')}:</span>
                   <span>{new Date(selectedTrip.tripDate).toLocaleDateString()}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-orange-600" />
-                  <span className="font-medium">Time:</span>
-                  <span>{selectedTrip.departureTimeOnly} - {selectedTrip.arrivalTimeOnly}</span>
+                  <span className="font-medium">{isRTL ? t('pages.student.bookTrip.fields.timeRangeLabelRtl', 'Time (Arrival / Departure)') : t('pages.student.bookTrip.fields.timeRangeLabel', 'Time (Departure / Arrival)')}:</span>
+                  <span>{isRTL ? `${selectedTrip.arrivalTimeOnly} - ${selectedTrip.departureTimeOnly}` : `${selectedTrip.departureTimeOnly} - ${selectedTrip.arrivalTimeOnly}`}</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Users className="h-4 w-4 text-red-600" />
-                  <span className="font-medium">Available Seats:</span>
+          <span className="font-medium">{t('pages.student.bookTrip.availableSeats', 'Available Seats')}:</span>
                   <span className="font-bold text-green-600">{selectedTrip.avalableSeates}</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <span className="font-medium">Status:</span>
+          <span className="font-medium">{t('pages.trips.table.status', 'Status')}:</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     selectedTrip.status === 'Scheduled' ? 'bg-blue-100 text-blue-800' :
                     selectedTrip.status === 'InProgress' ? 'bg-green-100 text-green-800' :
@@ -803,7 +822,7 @@ export default function BookTripPage() {
                     selectedTrip.status === 'Cancelled' ? 'bg-red-100 text-red-800' :
                     'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {selectedTrip.status}
+          {statusLabel(selectedTrip.status as TripStatus)}
                   </span>
                 </div>
               </div>
@@ -811,22 +830,22 @@ export default function BookTripPage() {
 
             {/* Additional Trip Information */}
             <div className="bg-gray-50 p-4 rounded-lg">
-              <h4 className="font-semibold text-lg mb-3 text-gray-700">Additional Information</h4>
+        <h4 className="font-semibold text-lg mb-3 text-gray-700">{t('pages.student.bookTrip.additionalInfo', 'Additional Information')}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="font-medium text-gray-600">Driver:</span>
-                  <span className="ml-2">{selectedTrip.driverName || 'Not assigned'}</span>
+                  <span className="font-medium text-gray-600">{t('pages.student.bookTrip.fields.driver', 'Driver')}:</span>
+          <span className="ml-2">{selectedTrip.driverName || t('pages.student.bookTrip.notAssigned', 'Not assigned')}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">Conductor:</span>
-                  <span className="ml-2">{selectedTrip.conductorName || 'Not assigned'}</span>
+                  <span className="font-medium text-gray-600">{t('pages.student.bookTrip.fields.conductor', 'Conductor')}:</span>
+          <span className="ml-2">{selectedTrip.conductorName || t('pages.student.bookTrip.notAssigned', 'Not assigned')}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">Total Seats:</span>
+                  <span className="font-medium text-gray-600">{t('pages.student.bookTrip.totalSeats', 'Total Seats')}:</span>
                   <span className="ml-2">{selectedTrip.totalSeats}</span>
                 </div>
                 <div>
-                  <span className="font-medium text-gray-600">Booked Seats:</span>
+                  <span className="font-medium text-gray-600">{t('pages.student.bookTrip.bookedSeats', 'Booked Seats')}:</span>
                   <span className="ml-2">{selectedTrip.bookedSeats}</span>
                 </div>
               </div>
@@ -834,7 +853,7 @@ export default function BookTripPage() {
 
             {/* Pickup Location Selection */}
             <div>
-              <h3 className="font-semibold text-lg mb-3">Select Pickup Location</h3>
+        <h3 className="font-semibold text-lg mb-3">{t('pages.student.bookTrip.selectPickup', 'Select Pickup Location')}</h3>
               {selectedTrip.stopLocations && selectedTrip.stopLocations.length > 0 ? (
                 <div className="space-y-2">
                   {selectedTrip.stopLocations.map((stop) => (
@@ -860,7 +879,7 @@ export default function BookTripPage() {
                         <div>
                           <div className="font-medium">{stop.address}</div>
                           <div className="text-sm text-gray-500">
-                            Arrival: {stop.arrivalTimeOnly} | Departure: {stop.departureTimeOnly}
+                            {t('pages.student.bookTrip.stopArrival', 'Arrival')}: {stop.arrivalTimeOnly} | {t('pages.student.bookTrip.stopDeparture', 'Departure')}: {stop.departureTimeOnly}
                           </div>
                         </div>
                       </div>
@@ -870,7 +889,7 @@ export default function BookTripPage() {
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <AlertCircle className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                  <p>No stop locations available for this trip</p>
+                  <p>{t('pages.student.bookTrip.noStops', 'No stop locations available for this trip')}</p>
                 </div>
               )}
             </div>
@@ -880,13 +899,13 @@ export default function BookTripPage() {
                 variant="outline"
                 onClick={() => setShowBookingModal(false)}
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </Button>
               <Button
                 onClick={handleConfirmBooking}
                 disabled={!selectedStopId}
               >
-                Confirm Booking
+                {t('pages.student.bookTrip.confirmBooking', 'Confirm Booking')}
               </Button>
             </div>
           </div>

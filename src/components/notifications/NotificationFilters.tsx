@@ -6,6 +6,7 @@ import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
 import { Filter, Clock, Search } from 'lucide-react';
 import { NotificationFilters, NotificationType } from '@/types/notification';
+import { useI18n } from '@/contexts/LanguageContext';
 
 interface NotificationFiltersProps {
   filters: NotificationFilters;
@@ -20,6 +21,7 @@ export function NotificationFiltersComponent({
   totalCount,
   onClearFilters
 }: NotificationFiltersProps) {
+  const { t } = useI18n();
   const handleSearchChange = (value: string) => {
     onFiltersChange({ ...filters, search: value });
   };
@@ -53,9 +55,9 @@ export function NotificationFiltersComponent({
   return (
     <Card className="bg-white border-[#E0E0E0]">
       <CardHeader>
-        <CardTitle className="text-[#212121]">Filters & Search</CardTitle>
+        <CardTitle className="text-[#212121]">{t('pages.notifications.filters.title', 'Filters & Search')}</CardTitle>
         <CardDescription className="text-[#757575]">
-          Find the notifications you need quickly
+          {t('pages.notifications.filters.description', 'Find the notifications you need quickly')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -64,7 +66,7 @@ export function NotificationFiltersComponent({
           <div className="relative">
             <Search className="absolute left-3 top-3 h-4 w-4 text-[#757575]" />
             <Input
-              placeholder="Search title, message..."
+              placeholder={t('pages.notifications.filters.searchPlaceholder', 'Search title, message...')}
               value={filters.search || ''}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-10"
@@ -76,12 +78,12 @@ export function NotificationFiltersComponent({
             value={filters.type || 'all'}
             onChange={(e) => handleTypeChange(e.target.value)}
             options={[
-              { value: 'all', label: 'All Types' },
-              { value: NotificationType.System, label: 'System' },
-              { value: NotificationType.Alert, label: 'Alert' },
-              { value: NotificationType.Announcement, label: 'Announcement' },
-              { value: NotificationType.Reminder, label: 'Reminder' },
-              { value: NotificationType.Booking, label: 'Booking' },
+              { value: 'all', label: t('pages.notifications.filters.allTypes', 'All Types') },
+              { value: NotificationType.System, label: t('pages.notifications.types.system', 'System') },
+              { value: NotificationType.Alert, label: t('pages.notifications.types.alert', 'Alert') },
+              { value: NotificationType.Announcement, label: t('pages.notifications.types.announcement', 'Announcement') },
+              { value: NotificationType.Reminder, label: t('pages.notifications.types.reminder', 'Reminder') },
+              { value: NotificationType.Booking, label: t('pages.notifications.types.booking', 'Booking') },
             ]}
           />
 
@@ -90,9 +92,9 @@ export function NotificationFiltersComponent({
             value={filters.isRead === 'all' ? 'all' : filters.isRead ? 'read' : 'unread'}
             onChange={(e) => handleReadStatusChange(e.target.value)}
             options={[
-              { value: 'all', label: 'All Status' },
-              { value: 'unread', label: 'Unread' },
-              { value: 'read', label: 'Read' },
+              { value: 'all', label: t('pages.notifications.filters.allStatus', 'All Status') },
+              { value: 'unread', label: t('pages.notifications.status.unread', 'Unread') },
+              { value: 'read', label: t('pages.notifications.status.read', 'Read') },
             ]}
           />
 
@@ -101,11 +103,11 @@ export function NotificationFiltersComponent({
             value={filters.dateRange || 'all'}
             onChange={(e) => handleDateRangeChange(e.target.value)}
             options={[
-              { value: 'all', label: 'All Dates' },
-              { value: 'today', label: 'Today' },
-              { value: '7d', label: 'Last 7 Days' },
-              { value: '30d', label: 'Last 30 Days' },
-              { value: 'specific', label: 'Specific Date' },
+              { value: 'all', label: t('pages.notifications.filters.allDates', 'All Dates') },
+              { value: 'today', label: t('pages.notifications.filters.today', 'Today') },
+              { value: '7d', label: t('pages.notifications.filters.last7d', 'Last 7 Days') },
+              { value: '30d', label: t('pages.notifications.filters.last30d', 'Last 30 Days') },
+              { value: 'specific', label: t('pages.notifications.filters.specificDate', 'Specific Date') },
             ]}
           />
 
@@ -119,7 +121,8 @@ export function NotificationFiltersComponent({
           ) : (
             <div className="flex items-center text-sm text-[#757575]">
               <Clock className="w-4 h-4 mr-2" />
-              {totalCount} notification(s)
+              {t('pages.notifications.filters.totalCount', '{{count}} notification(s)')
+                .replace('{{count}}', String(totalCount))}
             </div>
           )}
         </div>
@@ -132,7 +135,7 @@ export function NotificationFiltersComponent({
             className="flex items-center gap-2"
           >
             <Filter className="w-4 h-4" />
-            Clear Filters
+            {t('pages.notifications.filters.clear', 'Clear Filters')}
           </Button>
         </div>
       </CardContent>

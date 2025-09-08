@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useI18n } from '@/contexts/LanguageContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -17,6 +18,7 @@ import {
   Clock
 } from 'lucide-react';
 import type { TripResponse } from '@/types/trip';
+import { formatDate as formatWithLocale } from '@/lib/format';
 
 interface TripListProps {
   trips: TripResponse[];
@@ -24,6 +26,8 @@ interface TripListProps {
   onView: (trip: TripResponse) => void;
   onDelete: (trip: TripResponse) => void;
   loading?: boolean;
+  /** Base i18n path, e.g., 'pages.movementManager.trips' or 'pages.admin.trips'. Defaults to admin. */
+  i18nBase?: string;
 }
 
 export default function TripList({ 
@@ -31,8 +35,12 @@ export default function TripList({
   onEdit, 
   onView, 
   onDelete, 
-  loading = false 
+  loading = false,
+  i18nBase = 'pages.admin.trips'
 }: TripListProps) {
+  const { t, lang } = useI18n();
+  const base = useMemo(() => i18nBase, [i18nBase]);
+  const L = (suffix: string, fallback: string) => t(`${base}.${suffix}`, t(`pages.admin.trips.${suffix}`, fallback));
   const [sortField, setSortField] = useState<keyof TripResponse>('departureTimeOnly');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
@@ -77,39 +85,35 @@ export default function TripList({
     return 0;
   });
 
-  const formatTime = (time: string) => {
+  const formatTime = (value: string) => {
     try {
-      return new Date(time).toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch {
-      return time;
-    }
+      // value is expected HH:mm; create a Date for formatting consistency
+      const [hh, mm] = (value || '').split(':').map(Number);
+      const d = new Date();
+      if (Number.isFinite(hh) && Number.isFinite(mm)) {
+        d.setHours(hh || 0, mm || 0, 0, 0);
+        return formatWithLocale(lang, d, { hour: '2-digit', minute: '2-digit' });
+      }
+      return value;
+    } catch { return value; }
   };
 
-  const formatDate = (date: string) => {
+  const formatDate = (value: string) => {
     try {
-      return new Date(date).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch {
-      return date;
-    }
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return value;
+      return formatWithLocale(lang, d, { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch { return value; }
   };
 
   const getStatusBadge = (status: string) => {
     const statusMap: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', text: string }> = {
-      'scheduled': { variant: 'default', text: 'Scheduled' },
-      'in-progress': { variant: 'secondary', text: 'In Progress' },
-      'completed': { variant: 'outline', text: 'Completed' },
-      'cancelled': { variant: 'destructive', text: 'Cancelled' },
-      'delayed': { variant: 'secondary', text: 'Delayed' }
+      'scheduled': { variant: 'default', text: t('common.status.scheduled', 'Scheduled') },
+      'in-progress': { variant: 'secondary', text: t('common.status.inProgress', 'In Progress') },
+      'completed': { variant: 'outline', text: t('common.status.completed', 'Completed') },
+      'cancelled': { variant: 'destructive', text: t('common.status.cancelled', 'Cancelled') },
+      'delayed': { variant: 'secondary', text: t('common.status.delayed', 'Delayed') }
     };
-    
     const statusInfo = statusMap[status.toLowerCase()] || { variant: 'outline', text: status };
     return <Badge variant={statusInfo.variant}>{statusInfo.text}</Badge>;
   };
@@ -129,7 +133,7 @@ export default function TripList({
         <CardContent className="p-6">
           <div className="flex items-center justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-gray-600">Loading trips...</span>
+            <span className="ml-2 text-gray-600">{L('loading', 'Loading trips...')}</span>
           </div>
         </CardContent>
       </Card>
@@ -142,10 +146,8 @@ export default function TripList({
         <CardContent className="p-6">
           <div className="text-center py-8">
             <Bus className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No trips found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Get started by creating a new trip.
-            </p>
+            <h3 className="mt-2 text-sm font-medium text-gray-900">{L('noTrips', 'No trips found')}</h3>
+            <p className="mt-1 text-sm text-gray-500">{L('getStarted', 'Get started by creating a new trip.')}</p>
           </div>
         </CardContent>
       </Card>
@@ -157,7 +159,7 @@ export default function TripList({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Calendar className="h-5 w-5" />
-          Trips ({trips.length})
+          {t(`${base}.title`, t('pages.admin.trips.title', 'Trips'))} ({trips.length})
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -169,7 +171,7 @@ export default function TripList({
                   className="text-left p-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
                   onClick={() => handleSort('id')}
                 >
-                  ID
+                  {t(`${base}.table.id`, t('pages.admin.trips.table.id', 'ID'))}
                   {sortField === 'id' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -178,7 +180,7 @@ export default function TripList({
                   className="text-left p-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
                   onClick={() => handleSort('departureTimeOnly')}
                 >
-                  Date & Time
+                  {t(`${base}.table.dateTime`, t('pages.admin.trips.table.dateTime', 'Date & Time'))}
                   {sortField === 'departureTimeOnly' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -186,13 +188,13 @@ export default function TripList({
                 <th 
                   className="text-left p-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
                 >
-                  Route
+                  {t(`${base}.table.route`, t('pages.admin.trips.table.route', 'Route'))}
                 </th>
                 <th 
                   className="text-left p-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
                   onClick={() => handleSort('driverId')}
                 >
-                  Driver
+                  {t(`${base}.table.driver`, t('pages.admin.trips.table.driver', 'Driver'))}
                   {sortField === 'driverId' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -201,7 +203,7 @@ export default function TripList({
                   className="text-left p-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
                   onClick={() => handleSort('busId')}
                 >
-                  Bus
+                  {t(`${base}.table.bus`, t('pages.admin.trips.table.bus', 'Bus'))}
                   {sortField === 'busId' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
@@ -210,12 +212,12 @@ export default function TripList({
                   className="text-left p-3 font-medium text-gray-700 cursor-pointer hover:bg-gray-50"
                   onClick={() => handleSort('status')}
                 >
-                  Status
+                  {t(`${base}.table.status`, t('pages.admin.trips.table.status', 'Status'))}
                   {sortField === 'status' && (
                     <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </th>
-                <th className="text-left p-3 font-medium text-gray-700">Actions</th>
+                <th className="text-left p-3 font-medium text-gray-700">{t(`${base}.table.actions`, t('pages.admin.trips.table.actions', 'Actions'))}</th>
               </tr>
             </thead>
             <tbody>
@@ -234,7 +236,7 @@ export default function TripList({
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-gray-400" />
                       <div>
-                        <div className="font-medium">{formatDate(trip.departureTimeOnly)}</div>
+                        <div className="font-medium">{formatDate((trip as any).tripDate || '')}</div>
                         <div className="text-gray-500 flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {formatTime(trip.departureTimeOnly)}
@@ -246,8 +248,8 @@ export default function TripList({
                     <div className="flex items-center gap-2">
                       <MapPin className="h-4 w-4 text-gray-400" />
                       <div>
-                        <div className="font-medium">{(trip as any).origin || (trip as any).startLocation || 'N/A'}</div>
-                        <div className="text-gray-500">→ {(trip as any).destination || (trip as any).endLocation || 'N/A'}</div>
+                        <div className="font-medium">{(trip as any).origin || (trip as any).startLocation || t('common.na', 'N/A')}</div>
+                        <div className="text-gray-500">→ {(trip as any).destination || (trip as any).endLocation || t('common.na', 'N/A')}</div>
                       </div>
                     </div>
                   </td>

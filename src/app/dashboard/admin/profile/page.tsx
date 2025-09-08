@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -9,7 +9,6 @@ import {
   User, 
   Mail, 
   Phone, 
-  Camera, 
   Save, 
   Edit3, 
   X,
@@ -24,6 +23,7 @@ import {
   EyeOff
 } from 'lucide-react';
 import { userAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
 
 interface AdminProfile {
   id: number;
@@ -38,6 +38,7 @@ interface AdminProfile {
 }
 
 export default function AdminProfilePage() {
+  const { t } = useI18n();
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -72,7 +73,7 @@ export default function AdminProfilePage() {
           email: response.email || '',
           phoneNumber: response.phoneNumber || '',
           nationalId: response.nationalId || '',
-          profilePictureUrl: response.profilePictureUrl || 'https://example.com/default-profile.png',
+          profilePictureUrl: response.profilePictureUrl || '/avatar-placeholder.svg',
           status: response.status || 'Active',
           role: response.role || 'Admin'
         };
@@ -123,24 +124,24 @@ export default function AdminProfilePage() {
 
       // Check if at least one field is provided
       if (!trimmedData.firstName && !trimmedData.lastName && !trimmedData.email && !trimmedData.phoneNumber) {
-        alert('Please fill in at least one field to update.');
+  alert(t('pages.admin.profile.alerts.fillOne', 'Please fill in at least one field to update.'));
         return;
       }
 
       // Validate name lengths
       if (trimmedData.firstName && (trimmedData.firstName.length < 2 || trimmedData.firstName.length > 50)) {
-        alert('First name must be between 2 and 50 characters.');
+  alert(t('pages.admin.profile.alerts.firstNameLength', 'First name must be between 2 and 50 characters.'));
         return;
       }
 
       if (trimmedData.lastName && (trimmedData.lastName.length < 2 || trimmedData.lastName.length > 50)) {
-        alert('Last name must be between 2 and 50 characters.');
+  alert(t('pages.admin.profile.alerts.lastNameLength', 'Last name must be between 2 and 50 characters.'));
         return;
       }
 
       // Validate email format
       if (trimmedData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedData.email)) {
-        alert('Please enter a valid email address.');
+  alert(t('pages.admin.profile.alerts.invalidEmail', 'Please enter a valid email address.'));
         return;
       }
 
@@ -157,11 +158,11 @@ export default function AdminProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile updated successfully!');
+        alert(t('pages.admin.profile.alerts.updated', 'Profile updated successfully!'));
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(t('pages.admin.profile.alerts.updateFailed', 'Failed to update profile. Please try again.'));
     } finally {
       setIsSaving(false);
     }
@@ -187,13 +188,13 @@ export default function AdminProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+      alert(t('pages.admin.profile.alerts.selectImage', 'Please select an image file.'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should not exceed 5MB.');
+      alert(t('pages.admin.profile.alerts.imageTooLarge', 'Image size should not exceed 5MB.'));
       return;
     }
 
@@ -212,11 +213,11 @@ export default function AdminProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile picture updated successfully!');
+        alert(t('pages.admin.profile.alerts.pictureUpdated', 'Profile picture updated successfully!'));
       }
     } catch (error) {
       console.error('Failed to update profile picture:', error);
-      alert('Failed to update profile picture. Please try again.');
+      alert(t('pages.admin.profile.alerts.pictureUpdateFailed', 'Failed to update profile picture. Please try again.'));
     } finally {
       setIsUploadingImage(false);
       if (fileInputRef.current) {
@@ -227,7 +228,8 @@ export default function AdminProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return 'https://example.com/default-profile.png';
+    if (!imagePath) return '/avatar-placeholder.svg';
+    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -250,13 +252,14 @@ export default function AdminProfilePage() {
   const getAvatarDisplay = () => {
     if (profile?.profilePictureUrl) {
       return (
+  // eslint-disable-next-line @next/next/no-img-element
         <img
           src={buildImageUrl(profile.profilePictureUrl)}
           alt="Profile"
           className="w-full h-full object-cover rounded-full"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = 'https://example.com/default-profile.png';
+            target.src = '/avatar-placeholder.svg';
           }}
         />
       );
@@ -313,11 +316,11 @@ export default function AdminProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">Unable to load profile information.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('pages.admin.profile.notFound.title', 'Profile Not Found')}</h1>
+          <p className="text-gray-600 mb-6">{t('pages.admin.profile.notFound.message', 'Unable to load profile information.')}</p>
           <Button onClick={fetchProfile} className="bg-blue-600 hover:bg-blue-700">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t('pages.admin.profile.notFound.tryAgain', 'Try Again')}
           </Button>
         </div>
       </div>
@@ -345,14 +348,14 @@ export default function AdminProfilePage() {
                     {profile.role}
                   </Badge>
                 </div>
-                <p className="text-gray-600 text-lg">System Administrator</p>
+                <p className="text-gray-600 text-lg">{t('pages.admin.profile.header.adminTitle', 'System Administrator')}</p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     {profile.status}
                   </span>
                   <span>•</span>
-                  <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
+                  <span>{t('pages.admin.profile.header.lastUpdated', 'Last updated')}: {lastRefresh.toLocaleTimeString()}</span>
                 </div>
               </div>
             </div>
@@ -375,14 +378,18 @@ export default function AdminProfilePage() {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                {isUploadingImage ? 'Uploading...' : 'Change Photo'}
+                {isUploadingImage 
+                  ? t('pages.admin.profile.header.uploading', 'Uploading...') 
+                  : t('pages.admin.profile.header.changePhoto', 'Change Photo')}
               </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+                {isEditing 
+                  ? t('pages.admin.profile.header.cancelEdit', 'Cancel Edit') 
+                  : t('pages.admin.profile.header.edit', 'Edit Profile')}
               </Button>
             </div>
           </div>
@@ -396,10 +403,10 @@ export default function AdminProfilePage() {
               <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <Settings className="w-5 h-5" />
-                  Profile Overview
+                  {t('pages.admin.profile.overview.title', 'Profile Overview')}
                 </CardTitle>
                 <CardDescription className="text-purple-100">
-                  Your administrative profile summary
+                  {t('pages.admin.profile.overview.description', 'Your administrative profile summary')}
                 </CardDescription>
               </div>
               <CardContent className="p-6 space-y-6">
@@ -428,15 +435,15 @@ export default function AdminProfilePage() {
                 {/* Quick Stats */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">User ID</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.admin.profile.overview.userId', 'User ID')}</span>
                     <span className="font-mono text-sm font-bold text-gray-900">#{profile.id}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Role Level</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.admin.profile.overview.roleLevel', 'Role Level')}</span>
                     <Badge className="bg-purple-100 text-purple-800">
                       <Crown className="w-3 h-3 mr-1" />
-                      Admin
+                      {t('pages.admin.profile.overview.roleAdmin', 'Admin')}
                     </Badge>
                   </div>
                 </div>
@@ -445,11 +452,11 @@ export default function AdminProfilePage() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-4 h-4 text-purple-600" />
-                    Security Information
+                    {t('pages.admin.profile.overview.securityInfo', 'Security Information')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">National ID</span>
+                      <span className="text-sm text-gray-600">{t('pages.admin.profile.overview.nationalId', 'National ID')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm">
                           {showSensitiveData ? profile.nationalId : maskData(profile.nationalId)}
@@ -480,10 +487,10 @@ export default function AdminProfilePage() {
               <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <User className="w-5 h-5" />
-                  Personal Information
+                  {t('pages.admin.profile.personal.title', 'Personal Information')}
                 </CardTitle>
                 <CardDescription className="text-blue-100">
-                  Manage your personal details and contact information
+                  {t('pages.admin.profile.personal.description', 'Manage your personal details and contact information')}
                 </CardDescription>
               </div>
               <CardContent className="p-4 sm:p-6">
@@ -492,7 +499,7 @@ export default function AdminProfilePage() {
                   {/* First Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      First Name
+                      {t('pages.admin.profile.personal.firstName', 'First Name')}
                     </label>
                     <div className="relative">
                       <Input
@@ -500,7 +507,7 @@ export default function AdminProfilePage() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your first name"
+                        placeholder={t('pages.admin.profile.personal.placeholders.firstName', 'Enter your first name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -518,7 +525,7 @@ export default function AdminProfilePage() {
                   {/* Last Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Last Name
+                      {t('pages.admin.profile.personal.lastName', 'Last Name')}
                     </label>
                     <div className="relative">
                       <Input
@@ -526,7 +533,7 @@ export default function AdminProfilePage() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your last name"
+                        placeholder={t('pages.admin.profile.personal.placeholders.lastName', 'Enter your last name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -544,7 +551,7 @@ export default function AdminProfilePage() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Email Address
+                      {t('pages.admin.profile.personal.email', 'Email Address')}
                     </label>
                     <div className="relative">
                       <Input
@@ -553,7 +560,7 @@ export default function AdminProfilePage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your email"
+                        placeholder={t('pages.admin.profile.personal.placeholders.email', 'Enter your email')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -571,7 +578,7 @@ export default function AdminProfilePage() {
                   {/* Phone Number */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Phone Number
+                      {t('pages.admin.profile.personal.phone', 'Phone Number')}
                     </label>
                     <div className="relative">
                       <Input
@@ -579,7 +586,7 @@ export default function AdminProfilePage() {
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your phone number"
+                        placeholder={t('pages.admin.profile.personal.placeholders.phone', 'Enter your phone number')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-blue-300 focus:border-blue-500 focus:ring-blue-500' 
@@ -606,12 +613,12 @@ export default function AdminProfilePage() {
                       {isSaving ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+              {t('pages.admin.profile.actions.saving', 'Saving...')}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+              {t('pages.admin.profile.actions.save', 'Save Changes')}
                         </>
                       )}
                     </Button>
@@ -621,7 +628,7 @@ export default function AdminProfilePage() {
                       className="w-full sm:flex-1 border-gray-300 hover:bg-gray-50"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Cancel
+            {t('common.cancel', 'Cancel')}
                     </Button>
                   </div>
                 )}
@@ -633,10 +640,9 @@ export default function AdminProfilePage() {
                       <Settings className="w-4 h-4 text-blue-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-blue-900 mb-1">System Administrator</h4>
+                      <h4 className="font-semibold text-blue-900 mb-1">{t('pages.admin.profile.footer.title', 'System Administrator')}</h4>
                       <p className="text-sm text-blue-700">
-                        You have full administrative access to the bus management system. 
-                        Your profile information is synchronized across all system components.
+                        {t('pages.admin.profile.footer.message', 'You have full administrative access to the bus management system. Your profile information is synchronized across all system components.')}
                       </p>
                     </div>
                   </div>

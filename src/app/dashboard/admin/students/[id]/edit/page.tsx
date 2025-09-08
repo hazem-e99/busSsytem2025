@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
+import { Card, CardContent, CardTitle, CardHeader } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Button } from '@/components/ui/Button';
@@ -12,7 +13,7 @@ import {
   Save, 
   ArrowLeft,
   GraduationCap,
-  Shield,
+  
   Activity,
   Clock
 } from 'lucide-react';
@@ -254,16 +255,18 @@ export default function EditStudentPage() {
         <CardHeader>
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-24 h-24 rounded-2xl bg-gray-100 ring-1 ring-black/5 flex items-center justify-center overflow-hidden shadow-sm">
-              {student.profilePictureUrl ? (
-                <img 
-                  src={student.profilePictureUrl} 
-                  alt={`${student.firstName} ${student.lastName}`}
-                    className="w-24 h-24 object-cover"
-                />
-              ) : (
+              <div className="w-24 h-24 rounded-2xl bg-gray-100 ring-1 ring-black/5 flex items-center justify-center overflow-hidden shadow-sm relative">
+                {student.profilePictureUrl ? (
+                  <Image
+                    src={student.profilePictureUrl}
+                    alt={`${student.firstName} ${student.lastName}`}
+                    fill
+                    sizes="96px"
+                    className="object-cover"
+                  />
+                ) : (
                   <User className="w-8 h-8 text-gray-500" />
-              )}
+                )}
               </div>
             </div>
             <div>

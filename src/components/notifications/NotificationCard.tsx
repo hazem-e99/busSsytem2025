@@ -1,7 +1,6 @@
 'use client';
 
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { 
   Bell, 
@@ -10,13 +9,14 @@ import {
   Trash2, 
   Clock,
   AlertTriangle,
-  Info,
+  
   Megaphone,
   Calendar,
   Bus
 } from 'lucide-react';
 import { NotificationViewModel, NotificationType, getNotificationTypeFromContent } from '@/types/notification';
-import { formatDate, getRelativeTime } from '@/utils/formatDate';
+import { getRelativeTime } from '@/utils/formatDate';
+import { useI18n } from '@/contexts/LanguageContext';
 
 interface NotificationCardProps {
   notification: NotificationViewModel;
@@ -35,6 +35,7 @@ export function NotificationCard({
   showActions = true,
   compact = false
 }: NotificationCardProps) {
+  const { t } = useI18n();
   // Determine notification type from content
   const notificationType = getNotificationTypeFromContent(notification.title, notification.message);
 
@@ -54,21 +55,7 @@ export function NotificationCard({
     }
   };
 
-  const getNotificationTypeColor = (type?: NotificationType) => {
-    switch (type) {
-      case NotificationType.Alert:
-        return 'bg-red-100 text-red-800 border-red-200';
-      case NotificationType.Announcement:
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case NotificationType.Reminder:
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case NotificationType.Booking:
-        return 'bg-green-100 text-green-800 border-green-200';
-      case NotificationType.System:
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
+  // color classes are not used directly in this component
 
   if (compact) {
     return (
@@ -84,7 +71,7 @@ export function NotificationCard({
               <p className={`text-sm font-semibold truncate ${
                 !notification.isRead ? 'text-primary' : 'text-gray-900'
               }`}>
-                {notification.title || 'Notification'}
+                {notification.title || t('pages.notifications.item.notification', 'Notification')}
               </p>
               {!notification.isRead && (
                 <span className="inline-block w-2 h-2 rounded-full bg-primary" />
@@ -151,7 +138,7 @@ export function NotificationCard({
                 <h3 className={`text-lg font-semibold ${
                   !notification.isRead ? 'text-gray-900' : 'text-gray-700'
                 }`}>
-                  {notification.title || 'Notification'}
+                  {notification.title || t('pages.notifications.item.notification', 'Notification')}
                 </h3>
                 {!notification.isRead && (
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
@@ -170,7 +157,7 @@ export function NotificationCard({
                   <span>{notification.timeAgo || getRelativeTime(notification.sentAt)}</span>
                 </div>
                 {notification.userName && (
-                  <span className="whitespace-nowrap">From: {notification.userName}</span>
+                  <span className="whitespace-nowrap">{t('pages.notifications.item.from', 'From')}: {notification.userName}</span>
                 )}
               </div>
             </div>
@@ -187,7 +174,7 @@ export function NotificationCard({
                 className="text-green-600 border-green-200 hover:bg-green-50"
               >
                 <CheckCircle2 className="w-4 h-4 mr-1" />
-                Mark Read
+                {t('pages.notifications.actions.markRead', 'Mark Read')}
               </Button>
             ) : (
               <Button
@@ -197,7 +184,7 @@ export function NotificationCard({
                 className="text-blue-600 border-blue-200 hover:bg-blue-50"
               >
                 <Eye className="w-4 h-4 mr-1" />
-                Mark Unread
+                {t('pages.notifications.actions.markUnread', 'Mark Unread')}
               </Button>
             )}
             <Button

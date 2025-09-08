@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
+import Image from 'next/image';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
@@ -10,13 +11,13 @@ import {
   User, 
   Mail, 
   Phone, 
-  Camera, 
+  
   Save, 
   Edit3, 
   X,
   Shield,
   GraduationCap,
-  Settings,
+  
   CheckCircle,
   AlertCircle,
   RefreshCw,
@@ -27,6 +28,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { userAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
 
 // Department and Year of Study options (same as registration page)
 const departments = [
@@ -41,18 +43,7 @@ const departments = [
   'PhysicalEducation', 'TourismAndHotels'
 ];
 
-const yearsOfStudy = [
-  'PreparatoryYear', 'FirstYear', 'SecondYear', 'ThirdYear', 'FourthYear',
-  'FifthYear', 'SixthYear', 'SeventhYear',
-  'MastersFirstYear', 'MastersSecondYear', 'MastersThirdYear',
-  'PhDFirstYear', 'PhDSecondYear', 'PhDThirdYear', 'PhDFourthYear', 'PhDFifthYear', 'PhDSixthYear',
-  'ResidencyFirstYear', 'ResidencySecondYear', 'ResidencyThirdYear', 'ResidencyFourthYear', 'ResidencyFifthYear',
-  'FellowshipFirstYear', 'FellowshipSecondYear',
-  'ExchangeStudent', 'VisitingStudent', 'NonDegreeStudent', 'ContinuingEducation',
-  'DiplomaFirstYear', 'DiplomaSecondYear', 'DiplomaThirdYear',
-  'ProfessionalFirstYear', 'ProfessionalSecondYear', 'ProfessionalThirdYear', 'ProfessionalFourthYear',
-  'RepeatYear', 'ThesisWriting', 'DissertationWriting'
-];
+// yearsOfStudy list intentionally omitted (not used here)
 
 interface StudentProfile {
   id: number;
@@ -73,6 +64,7 @@ interface StudentProfile {
 }
 
 export default function StudentProfilePage() {
+  const { t, lang } = useI18n() as any;
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -80,6 +72,7 @@ export default function StudentProfilePage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showSensitiveData, setShowSensitiveData] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -111,7 +104,7 @@ export default function StudentProfilePage() {
           email: response.email || '',
           phoneNumber: response.phoneNumber || '',
           nationalId: response.nationalId || '',
-          profilePictureUrl: response.profilePictureUrl || 'https://example.com/default-profile.png',
+          profilePictureUrl: response.profilePictureUrl || '/avatar-placeholder.svg',
           status: response.status || 'Active',
           role: response.role || 'Student',
           studentProfileId: parseInt(response.id) || 0, // Use user ID as studentUserId
@@ -201,48 +194,48 @@ export default function StudentProfilePage() {
 
       // Check if at least one field is provided
       if (Object.keys(apiData).length === 0) {
-        alert('Please fill in at least one field to update.');
+        alert(t('pages.student.profile.alerts.fillOne', 'Please fill in at least one field to update.'));
         return;
       }
 
       // Validate name lengths
       if (apiData.firstName && (apiData.firstName.length < 2 || apiData.firstName.length > 50)) {
-        alert('First name must be between 2 and 50 characters.');
+        alert(t('pages.student.profile.alerts.firstNameLength', 'First name must be between 2 and 50 characters.'));
         return;
       }
 
       if (apiData.lastName && (apiData.lastName.length < 2 || apiData.lastName.length > 50)) {
-        alert('Last name must be between 2 and 50 characters.');
+        alert(t('pages.student.profile.alerts.lastNameLength', 'Last name must be between 2 and 50 characters.'));
         return;
       }
 
       // Validate email format
       if (apiData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(apiData.email)) {
-        alert('Please enter a valid email address.');
+        alert(t('pages.student.profile.alerts.invalidEmail', 'Please enter a valid email address.'));
         return;
       }
 
       // Validate year of study
       if (apiData.yearOfStudy && (apiData.yearOfStudy < 1 || apiData.yearOfStudy > 8)) {
-        alert('Year of study must be between 1 and 8.');
+        alert(t('pages.student.profile.alerts.yearRange', 'Year of study must be between 1 and 8.'));
         return;
       }
 
       // Validate department
       if (apiData.department && !departments.includes(apiData.department)) {
-        alert('Please select a valid department.');
+        alert(t('pages.student.profile.alerts.invalidDepartment', 'Please select a valid department.'));
         return;
       }
 
       // Validate emergency contact length
       if (apiData.emergencyContact && apiData.emergencyContact.length > 100) {
-        alert('Emergency contact name must not exceed 100 characters.');
+        alert(t('pages.student.profile.alerts.emergencyContactLength', 'Emergency contact name must not exceed 100 characters.'));
         return;
       }
 
       // Validate emergency phone length
       if (apiData.emergencyPhone && apiData.emergencyPhone.length > 20) {
-        alert('Emergency phone number must not exceed 20 characters.');
+        alert(t('pages.student.profile.alerts.emergencyPhoneLength', 'Emergency phone number must not exceed 20 characters.'));
         return;
       }
 
@@ -260,20 +253,20 @@ export default function StudentProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Student profile updated successfully!');
+  alert(t('pages.student.profile.alerts.updateSuccess', 'Student profile updated successfully!'));
       }
     } catch (error: any) {
       console.error('Failed to update profile:', error);
       
       // Provide more specific error messages
       if (error?.response?.status === 400) {
-        alert('Invalid data provided. Please check your input and try again.');
+  alert(t('pages.student.profile.alerts.invalidData', 'Invalid data provided. Please check your input and try again.'));
       } else if (error?.response?.status === 401) {
-        alert('You are not authorized to perform this action.');
+  alert(t('pages.student.profile.alerts.unauthorized', 'You are not authorized to perform this action.'));
       } else if (error?.response?.status === 403) {
-        alert('Access denied. You do not have permission to update this profile.');
+  alert(t('pages.student.profile.alerts.forbidden', 'Access denied. You do not have permission to update this profile.'));
       } else {
-        alert('Failed to update profile. Please try again.');
+  alert(t('pages.student.profile.alerts.updateFailed', 'Failed to update profile. Please try again.'));
       }
     } finally {
       setIsSaving(false);
@@ -304,13 +297,13 @@ export default function StudentProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+      alert(t('pages.student.profile.alerts.selectImage', 'Please select an image file.'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should not exceed 5MB.');
+      alert(t('pages.student.profile.alerts.imageTooLarge', 'Image size should not exceed 5MB.'));
       return;
     }
 
@@ -329,11 +322,11 @@ export default function StudentProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile picture updated successfully!');
+        alert(t('pages.student.profile.alerts.photoSuccess', 'Profile picture updated successfully!'));
       }
     } catch (error) {
       console.error('Failed to update profile picture:', error);
-      alert('Failed to update profile picture. Please try again.');
+      alert(t('pages.student.profile.alerts.photoFailed', 'Failed to update profile picture. Please try again.'));
     } finally {
       setIsUploadingImage(false);
       if (fileInputRef.current) {
@@ -344,7 +337,8 @@ export default function StudentProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return 'https://example.com/default-profile.png';
+    if (!imagePath) return '/avatar-placeholder.svg';
+    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -367,14 +361,14 @@ export default function StudentProfilePage() {
   const getAvatarDisplay = () => {
     if (profile?.profilePictureUrl) {
       return (
-        <img
-          src={buildImageUrl(profile.profilePictureUrl)}
+        <Image
+          src={imageError ? '/avatar-placeholder.svg' : buildImageUrl(profile.profilePictureUrl)}
           alt="Profile"
-          className="w-full h-full object-cover rounded-full"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://example.com/default-profile.png';
-          }}
+          fill
+          sizes="(max-width: 1024px) 80px, 128px"
+          className="object-cover rounded-full"
+          onError={() => setImageError(true)}
+          priority
         />
       );
     }
@@ -430,11 +424,11 @@ export default function StudentProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">Unable to load profile information.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('pages.student.profile.notFoundTitle', 'Profile Not Found')}</h1>
+          <p className="text-gray-600 mb-6">{t('pages.student.profile.notFoundDesc', 'Unable to load profile information.')}</p>
           <Button onClick={fetchProfile} className="bg-green-600 hover:bg-green-700">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t('common.tryAgain', 'Try Again')}
           </Button>
         </div>
       </div>
@@ -449,7 +443,7 @@ export default function StudentProfilePage() {
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-green-500 to-emerald-600">
+              <div className="w-20 h-20 rounded-full overflow-hidden relative border-4 border-white shadow-lg bg-gradient-to-br from-green-500 to-emerald-600">
                 {getAvatarDisplay()}
               </div>
               <div>
@@ -459,17 +453,19 @@ export default function StudentProfilePage() {
                   </h1>
                   <Badge className="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200">
                     <GraduationCap className="w-3 h-3 mr-1" />
-                    {profile.role}
+                    {t('roles.student', 'Student')}
                   </Badge>
                 </div>
-                <p className="text-gray-600 text-lg">Student Profile</p>
+                <p className="text-gray-600 text-lg">{t('pages.student.profile.subtitle', 'Student Profile')}</p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    {profile.status}
+                    {t(`common.status.${(profile.status || '').toLowerCase()}` as any, profile.status)}
                   </span>
                   <span>•</span>
-                  <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
+                  <span>
+                    {t('pages.student.profile.lastUpdated', 'Last updated')}: {lastRefresh.toLocaleTimeString(lang === 'ar' ? 'ar-EG' : 'en-US')}
+                  </span>
                 </div>
               </div>
             </div>
@@ -492,14 +488,14 @@ export default function StudentProfilePage() {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                {isUploadingImage ? 'Uploading...' : 'Change Photo'}
+                {isUploadingImage ? t('pages.student.profile.uploading', 'Uploading...') : t('pages.student.profile.changePhoto', 'Change Photo')}
               </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 className="bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+                {isEditing ? t('pages.student.profile.cancelEdit', 'Cancel Edit') : t('pages.student.profile.editProfile', 'Edit Profile')}
               </Button>
             </div>
           </div>
@@ -513,17 +509,17 @@ export default function StudentProfilePage() {
               <div className="bg-gradient-to-r from-green-600 to-emerald-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <BookOpen className="w-5 h-5" />
-                  Student Overview
+                  {t('pages.student.profile.overviewTitle', 'Student Overview')}
                 </CardTitle>
                 <CardDescription className="text-green-100">
-                  Your academic profile summary
+                  {t('pages.student.profile.overviewDesc', 'Your academic profile summary')}
                 </CardDescription>
               </div>
               <CardContent className="p-6 space-y-6">
                 
                 {/* Avatar Section */}
                 <div className="flex justify-center">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                  <div className="w-32 h-32 rounded-full overflow-hidden relative border-4 border-white shadow-xl">
                     {getAvatarDisplay()}
                   </div>
                 </div>
@@ -538,45 +534,45 @@ export default function StudentProfilePage() {
                     <div className={`w-2 h-2 rounded-full mr-2 ${
                       profile.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
                     }`}></div>
-                    {profile.status}
+                    {t(`common.status.${(profile.status || '').toLowerCase()}` as any, profile.status)}
                   </Badge>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Student ID</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.student.profile.studentId', 'Student ID')}</span>
                     <span className="font-mono text-sm font-bold text-gray-900">#{profile.id}</span>
                   </div>
                   
                   {profile.studentAcademicNumber && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <span className="text-sm font-medium text-gray-600">Academic Number</span>
+                      <span className="text-sm font-medium text-gray-600">{t('pages.student.profile.academicNumber', 'Academic Number')}</span>
                       <span className="font-mono text-sm font-bold text-gray-900">{profile.studentAcademicNumber}</span>
                     </div>
                   )}
                   
                   {profile.department && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <span className="text-sm font-medium text-gray-600">Department</span>
+                      <span className="text-sm font-medium text-gray-600">{t('pages.student.profile.department', 'Department')}</span>
                       <span className="text-sm font-bold text-gray-900">{profile.department}</span>
                     </div>
                   )}
                   
                   {profile.yearOfStudy && profile.yearOfStudy > 0 && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                      <span className="text-sm font-medium text-gray-600">Year of Study</span>
+                      <span className="text-sm font-medium text-gray-600">{t('pages.student.profile.yearOfStudy', 'Year of Study')}</span>
                       <Badge className="bg-blue-100 text-blue-800">
-                        Year {profile.yearOfStudy}
+                        {t('pages.student.profile.yearShort', 'Year')} {profile.yearOfStudy}
                       </Badge>
                     </div>
                   )}
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Academic Status</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.student.profile.academicStatus', 'Academic Status')}</span>
                     <Badge className="bg-green-100 text-green-800">
                       <GraduationCap className="w-3 h-3 mr-1" />
-                      Student
+                      {t('roles.student', 'Student')}
                     </Badge>
                   </div>
                 </div>
@@ -585,11 +581,11 @@ export default function StudentProfilePage() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-4 h-4 text-green-600" />
-                    Security Information
+                    {t('pages.student.profile.securityInfo', 'Security Information')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">National ID</span>
+                      <span className="text-sm text-gray-600">{t('pages.student.profile.nationalId', 'National ID')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm">
                           {showSensitiveData ? profile.nationalId : maskData(profile.nationalId)}
@@ -616,18 +612,18 @@ export default function StudentProfilePage() {
                   <div className="space-y-3">
                     <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                       <AlertCircle className="w-4 h-4 text-orange-600" />
-                      Emergency Information
+                      {t('pages.student.profile.emergencyInfo', 'Emergency Information')}
                     </h4>
                     <div className="space-y-2">
                       {profile.emergencyContact && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Emergency Contact</span>
+                          <span className="text-sm text-gray-600">{t('pages.student.profile.emergencyContact', 'Emergency Contact')}</span>
                           <span className="text-sm font-medium text-gray-900">{profile.emergencyContact}</span>
                         </div>
                       )}
                       {profile.emergencyPhone && (
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600">Emergency Phone</span>
+                          <span className="text-sm text-gray-600">{t('pages.student.profile.emergencyPhone', 'Emergency Phone')}</span>
                           <span className="font-mono text-sm font-medium text-gray-900">{profile.emergencyPhone}</span>
                         </div>
                       )}
@@ -644,10 +640,10 @@ export default function StudentProfilePage() {
               <div className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <User className="w-5 h-5" />
-                  Personal Information
+                  {t('pages.student.profile.personalInfo', 'Personal Information')}
                 </CardTitle>
                 <CardDescription className="text-emerald-100">
-                  Manage your personal details and contact information
+                  {t('pages.student.profile.personalInfoDesc', 'Manage your personal details and contact information')}
                 </CardDescription>
               </div>
               <CardContent className="p-4 sm:p-6">
@@ -656,7 +652,7 @@ export default function StudentProfilePage() {
                   {/* First Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      First Name
+                      {t('pages.student.profile.firstName', 'First Name')}
                     </label>
                     <div className="relative">
                       <Input
@@ -664,7 +660,7 @@ export default function StudentProfilePage() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your first name"
+                        placeholder={t('pages.student.profile.firstNamePlaceholder', 'Enter your first name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -682,7 +678,7 @@ export default function StudentProfilePage() {
                   {/* Last Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Last Name
+                      {t('pages.student.profile.lastName', 'Last Name')}
                     </label>
                     <div className="relative">
                       <Input
@@ -690,7 +686,7 @@ export default function StudentProfilePage() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your last name"
+                        placeholder={t('pages.student.profile.lastNamePlaceholder', 'Enter your last name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -708,7 +704,7 @@ export default function StudentProfilePage() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Email Address
+                      {t('pages.student.profile.email', 'Email Address')}
                     </label>
                     <div className="relative">
                       <Input
@@ -717,7 +713,7 @@ export default function StudentProfilePage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your email"
+                        placeholder={t('pages.student.profile.emailPlaceholder', 'Enter your email')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -735,7 +731,7 @@ export default function StudentProfilePage() {
                   {/* Phone Number */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Phone Number
+                      {t('pages.student.profile.phone', 'Phone Number')}
                     </label>
                     <div className="relative">
                       <Input
@@ -743,7 +739,7 @@ export default function StudentProfilePage() {
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your phone number"
+                        placeholder={t('pages.student.profile.phonePlaceholder', 'Enter your phone number')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -761,7 +757,7 @@ export default function StudentProfilePage() {
                   {/* Department */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Department
+                      {t('pages.student.profile.department', 'Department')}
                     </label>
                     <div className="relative">
                       <Select
@@ -775,7 +771,7 @@ export default function StudentProfilePage() {
                             : 'bg-gray-50 border-gray-200'
                         }`}
                       >
-                        <option value="">Select Department</option>
+                        <option value="">{t('pages.student.profile.selectDepartment', 'Select Department')}</option>
                         {departments.map(dept => (
                           <option key={dept} value={dept}>{dept}</option>
                         ))}
@@ -791,7 +787,7 @@ export default function StudentProfilePage() {
                   {/* Year of Study */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Year of Study
+                      {t('pages.student.profile.yearOfStudy', 'Year of Study')}
                     </label>
                     <div className="relative">
                       <Input
@@ -802,7 +798,7 @@ export default function StudentProfilePage() {
                         value={formData.yearOfStudy}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter year of study (1-8)"
+                        placeholder={t('pages.student.profile.yearPlaceholder', 'Enter year of study (1-8)')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -820,7 +816,7 @@ export default function StudentProfilePage() {
                   {/* Emergency Contact */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Emergency Contact
+                      {t('pages.student.profile.emergencyContact', 'Emergency Contact')}
                     </label>
                     <div className="relative">
                       <Input
@@ -828,7 +824,7 @@ export default function StudentProfilePage() {
                         value={formData.emergencyContact}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter emergency contact name"
+                        placeholder={t('pages.student.profile.emergencyContactPlaceholder', 'Enter emergency contact name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -846,7 +842,7 @@ export default function StudentProfilePage() {
                   {/* Emergency Phone */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Emergency Phone
+                      {t('pages.student.profile.emergencyPhone', 'Emergency Phone')}
                     </label>
                     <div className="relative">
                       <Input
@@ -854,7 +850,7 @@ export default function StudentProfilePage() {
                         value={formData.emergencyPhone}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter emergency phone number"
+                        placeholder={t('pages.student.profile.emergencyPhonePlaceholder', 'Enter emergency phone number')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
@@ -881,12 +877,12 @@ export default function StudentProfilePage() {
                       {isSaving ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+                          {t('common.saving', 'Saving...')}
                         </>
                       ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+                          {t('common.saveChanges', 'Save Changes')}
                         </>
                       )}
                     </Button>
@@ -896,7 +892,7 @@ export default function StudentProfilePage() {
                       className="w-full sm:flex-1 border-gray-300 hover:bg-gray-50"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Cancel
+                      {t('common.cancel', 'Cancel')}
                     </Button>
                   </div>
                 )}
@@ -908,10 +904,9 @@ export default function StudentProfilePage() {
                       <GraduationCap className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
-                      <h4 className="font-semibold text-green-900 mb-1">Student Account</h4>
+                      <h4 className="font-semibold text-green-900 mb-1">{t('pages.student.profile.footerTitle', 'Student Account')}</h4>
                       <p className="text-sm text-green-700">
-                        You have access to view and book bus trips, manage your profile, 
-                        and track your travel history. Keep your information updated for better service.
+                        {t('pages.student.profile.footerDesc', 'You have access to view and book bus trips, manage your profile, and track your travel history. Keep your information updated for better service.')}
                       </p>
                     </div>
                   </div>

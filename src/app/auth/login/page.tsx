@@ -1,4 +1,4 @@
-'use client';
+ 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,6 +9,9 @@ import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Eye, EyeOff } from 'lucide-react';
 import { validateLogin } from '@/utils/validateLogin';
+import { useI18n } from '@/contexts/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,6 +23,19 @@ export default function LoginPage() {
   
   const { login } = useAuth();
   const router = useRouter();
+  const { t } = useI18n();
+
+  const translateErrors = (errs: string[]) => {
+    const map: Record<string, string> = {
+      'Email is required': t('pages.auth.login.validation.emailRequired', 'Email is required'),
+      'Email must be at least 5 characters long': t('pages.auth.login.validation.emailMin', 'Email must be at least 5 characters long'),
+      'Email must not exceed 100 characters': t('pages.auth.login.validation.emailMax', 'Email must not exceed 100 characters'),
+      'Please enter a valid email address': t('pages.auth.login.validation.emailInvalid', 'Please enter a valid email address'),
+      'Password is required': t('pages.auth.login.validation.passwordRequired', 'Password is required'),
+      'Password must be at least 1 character long': t('pages.auth.login.validation.passwordMin', 'Password must be at least 1 character long'),
+    };
+    return errs.map(e => map[e] || e).join(', ');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,7 +43,7 @@ export default function LoginPage() {
     
     const validation = validateLogin({ email, password, rememberMe });
     if (!validation.isValid) {
-      setError(validation.errors.join(', '));
+      setError(translateErrors(validation.errors));
       return;
     }
 
@@ -40,10 +56,10 @@ export default function LoginPage() {
         const dashboardPath = `/dashboard/${userRole.toLowerCase()}`;
         router.push(dashboardPath);
       } else {
-        setError('Invalid email or password');
+        setError(t('pages.auth.login.errors.invalidCredentials', 'Invalid email or password'));
       }
     } catch {
-      setError('An error occurred. Please try again.');
+      setError(t('pages.auth.login.errors.generic', 'An error occurred. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -58,14 +74,24 @@ export default function LoginPage() {
       <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-gradient-to-br from-primary/25 to-primary-hover/25 blur-3xl opacity-80 animate-pulse" />
       <div className="absolute -bottom-32 -right-32 w-[30rem] h-[30rem] rounded-full bg-gradient-to-tr from-emerald-400/15 to-sky-400/15 blur-3xl opacity-80 animate-pulse" />
 
+      {/* Top bar with language switcher */}
+      <div className="relative z-10">
+        <div className="flex justify-end p-4">
+          <LanguageSwitcher />
+        </div>
+      </div>
+
       <div className="relative grid grid-cols-1 lg:grid-cols-2 flex-1">
         {/* Illustration Panel */}
         <div className="hidden lg:flex items-center justify-center p-12 bg-gradient-to-br from-primary/10 to-white">
           <div className="max-w-lg w-full space-y-10">
             <div className="relative">
-              <img
+              <Image
                 src="/schoobus-amico.png"
-                alt="School bus illustration"
+                alt={t('pages.auth.login.illustrationAlt', 'School bus illustration')}
+                width={800}
+                height={600}
+                priority
                 className="w-full h-auto animate-bounce"
                 style={{
                   animation: 'moveBus 6.5s linear infinite'
@@ -87,16 +113,14 @@ export default function LoginPage() {
               }
             `}</style>
 
-            
-
-            {/* Developed By Section */}
+            {/* About Section */}
             <div className="mt-12 text-center">
-              <p className="text-sm font-medium text-text-secondary">
-                Developed by: <span className="font-semibold text-primary">Hazem Essam</span> &{' '}
-                <span className="font-semibold text-primary">Youssry Essam</span>
+              <h3 className="text-lg font-semibold text-text-primary">
+                {t('pages.auth.login.about.title', 'About the Bus System')}
+              </h3>
+              <p className="text-sm text-text-secondary mt-2">
+                {t('pages.auth.login.about.description', 'Book campus bus trips, manage subscriptions, and track routes — fast and easy.')}
               </p>
-              <p className="text-sm text-text-muted mt-1">📞 01094575914 & 01289529751</p>
-       
             </div>
           </div>
         </div>
@@ -108,21 +132,21 @@ export default function LoginPage() {
               <div className="absolute -inset-[2px] rounded-3xl bg-gradient-to-r from-primary/50 via-primary-hover/50 to-primary/50 opacity-70 blur-xl transition-opacity duration-500 group-hover:opacity-90" aria-hidden="true" />
               <Card className="relative shadow-2xl border border-white/10 bg-background/70 backdrop-blur-xl rounded-2xl">
                 <CardHeader className="text-center space-y-2">
-                  <CardTitle className="text-3xl font-bold text-text-primary">Welcome back 👋</CardTitle>
-                  <CardDescription className="text-base text-text-secondary">Login to Book Your Bus</CardDescription>
+                  <CardTitle className="text-3xl font-bold text-text-primary">{t('pages.auth.login.title', 'Welcome back 👋')}</CardTitle>
+                  <CardDescription className="text-base text-text-secondary">{t('pages.auth.login.subtitle', 'Login to Book Your Bus')}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
                     <div>
                       <label htmlFor="email" className="block text-sm font-semibold text-text-primary mb-2">
-                        Email
+                        {t('pages.auth.login.fields.email', 'Email')}
                       </label>
                       <Input
                         id="email"
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Enter your email"
+                        placeholder={t('pages.auth.login.placeholders.email', 'Enter your email')}
                         autoComplete="email"
                         required
                         className="h-11 rounded-xl bg-background/70 transition-colors focus:ring-2 focus:ring-primary/40 focus:border-primary"
@@ -131,7 +155,7 @@ export default function LoginPage() {
 
                     <div>
                       <label htmlFor="password" className="block text-sm font-semibold text-text-primary mb-2">
-                        Password
+                        {t('pages.auth.login.fields.password', 'Password')}
                       </label>
                       <div className="relative">
                         <Input
@@ -139,7 +163,7 @@ export default function LoginPage() {
                           type={showPassword ? 'text' : 'password'}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder="Enter your password"
+                          placeholder={t('pages.auth.login.placeholders.password', 'Enter your password')}
                           autoComplete="current-password"
                           required
                           className="h-11 pr-10 rounded-xl bg-background/70 transition-colors focus:ring-2 focus:ring-primary/40 focus:border-primary"
@@ -148,7 +172,7 @@ export default function LoginPage() {
                           type="button"
                           onClick={() => setShowPassword(!showPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary"
-                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                          aria-label={showPassword ? t('pages.auth.login.aria.hidePassword', 'Hide password') : t('pages.auth.login.aria.showPassword', 'Show password')}
                         >
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
@@ -163,7 +187,7 @@ export default function LoginPage() {
                           onChange={(e) => setRememberMe(e.target.checked)}
                           className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
                         />
-                        <span className="text-sm text-text-secondary">Remember me</span>
+                        <span className="text-sm text-text-secondary">{t('pages.auth.login.rememberMe', 'Remember me')}</span>
                       </label>
                     </div>
 
@@ -174,24 +198,24 @@ export default function LoginPage() {
                     )}
 
                     <Button type="submit" className="w-full h-12 text-base font-semibold rounded-xl bg-gradient-to-r from-primary to-primary-hover text-white shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-0.5 active:translate-y-0" disabled={isLoading || !isFormValid}>
-                      {isLoading ? 'Signing in...' : 'Sign in'}
+                      {isLoading ? t('pages.auth.login.cta.signingIn', 'Signing in...') : t('pages.auth.login.cta.signIn', 'Sign in')}
                     </Button>
                   </form>
 
                   <div className="mt-6 text-center">
                     <Link href="/auth/forgot-password" className="text-sm text-primary hover:text-primary-hover font-medium">
-                      Forgot your password?
+                      {t('pages.auth.login.forgotPassword', 'Forgot your password?')}
                     </Link>
                   </div>
 
                   <p className="mt-4 text-center text-xs text-text-muted">
-                    By continuing, you agree to our Terms and Privacy Policy.
+                    {t('pages.auth.login.terms', 'By continuing, you agree to our Terms and Privacy Policy.')}
                   </p>
 
                   <div className="mt-6 text-center">
-                    <span className="text-sm text-text-muted">Don&apos;t have an account? </span>
+                    <span className="text-sm text-text-muted">{t("pages.auth.login.signupPrompt", "Don't have an account?")} </span>
                     <Link href="/register" className="text-sm text-primary hover:text-primary-hover font-medium">
-                      Sign up
+                      {t('pages.auth.login.signup', 'Sign up')}
                     </Link>
                   </div>
                 </CardContent>

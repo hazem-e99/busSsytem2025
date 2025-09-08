@@ -13,8 +13,10 @@ import { BroadcastNotificationModal } from '@/components/notifications/Broadcast
 import { NotificationFilters, BroadcastNotificationDTO } from '@/types/notification';
 import { notificationAPI } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { useI18n } from '@/contexts/LanguageContext';
 
 export default function AdminNotificationsPage() {
+  const { t } = useI18n();
   const {
     notifications,
     unreadCount,
@@ -22,7 +24,7 @@ export default function AdminNotificationsPage() {
     loadNotifications,
     markAsRead,
     markAsUnread,
-    deleteNotification,
+    
     markAllAsRead,
     clearAll,
     broadcastNotification,
@@ -63,15 +65,27 @@ export default function AdminNotificationsPage() {
     try {
       await broadcastNotification(data);
       setBroadcastModalOpen(false);
+      showToast({
+        type: 'success',
+        title: t('pages.notifications.toasts.successTitle', 'Success'),
+        message: t('pages.notifications.toasts.broadcastSent', 'Notification broadcast sent'),
+      });
+      // Optionally refresh list
+      await loadNotifications();
     } catch (error) {
       console.error('Failed to broadcast notification:', error);
+      showToast({
+        type: 'error',
+        title: t('pages.notifications.toasts.errorTitle', 'Error'),
+        message: t('pages.notifications.toasts.broadcastFailed', 'Failed to send broadcast'),
+      });
     } finally {
       setIsBroadcasting(false);
     }
   };
 
   const handleClearAllNotifications = async () => {
-    if (!confirm('Are you sure you want to clear ALL notifications? This action cannot be undone.')) {
+  if (!confirm(t('pages.notifications.confirms.clearAll', 'Are you sure you want to clear ALL notifications? This action cannot be undone.'))) {
       return;
     }
 
@@ -80,15 +94,15 @@ export default function AdminNotificationsPage() {
       await clearAll();
       showToast({
         type: 'success',
-        title: 'Success',
-        message: 'All notifications have been cleared'
+  title: t('pages.notifications.toasts.successTitle', 'Success'),
+  message: t('pages.notifications.toasts.cleared', 'All notifications have been cleared')
       });
     } catch (error) {
       console.error('Failed to clear all notifications:', error);
       showToast({
         type: 'error',
-        title: 'Error',
-        message: 'Failed to clear all notifications'
+  title: t('pages.notifications.toasts.errorTitle', 'Error'),
+  message: t('pages.notifications.toasts.clearFailed', 'Failed to clear all notifications')
       });
     } finally {
       setIsClearingAll(false);
@@ -100,7 +114,7 @@ export default function AdminNotificationsPage() {
       const response = await notificationAPI.adminDelete(id);
       if (response.success) {
         // Remove from local state
-        const updatedNotifications = notifications.filter(n => n.id !== id);
+  // const updatedNotifications = notifications.filter(n => n.id !== id);
         // Update unread count if needed
         const deletedNotification = notifications.find(n => n.id === id);
         if (deletedNotification && !deletedNotification.isRead) {
@@ -108,8 +122,8 @@ export default function AdminNotificationsPage() {
         }
         showToast({
           type: 'success',
-          title: 'Success',
-          message: 'Notification deleted successfully'
+          title: t('pages.notifications.toasts.successTitle', 'Success'),
+          message: t('pages.notifications.toasts.deleted', 'Notification deleted successfully')
         });
         // Reload notifications to get updated data
         await loadNotifications();
@@ -118,8 +132,8 @@ export default function AdminNotificationsPage() {
       console.error('Failed to delete notification:', error);
       showToast({
         type: 'error',
-        title: 'Error',
-        message: 'Failed to delete notification'
+        title: t('pages.notifications.toasts.errorTitle', 'Error'),
+        message: t('pages.notifications.toasts.deleteFailed', 'Failed to delete notification')
       });
     }
   };
@@ -131,13 +145,13 @@ export default function AdminNotificationsPage() {
         <div>
           <h1 className="text-3xl font-bold text-[#212121] flex items-center gap-2">
             <Shield className="w-7 h-7 text-primary" /> 
-            Admin Notifications
+            {t('pages.admin.notifications.title', 'Admin Notifications')}
           </h1>
-          <p className="text-[#424242]">Manage all system notifications and broadcast messages</p>
+          <p className="text-[#424242]">{t('pages.admin.notifications.subtitle', 'Manage all system notifications and broadcast messages')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Badge variant="outline" className="text-primary border-primary">
-            {unreadCount} Unread
+            {unreadCount} {t('topbar.unread', 'Unread')}
           </Badge>
           <Button 
             variant="outline" 
@@ -145,14 +159,14 @@ export default function AdminNotificationsPage() {
             className="flex items-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
-            Refresh
+            {t('driver.myTrips.refresh', 'Refresh')}
           </Button>
           <Button 
             onClick={() => setBroadcastModalOpen(true)}
             className="flex items-center gap-2"
           >
             <Send className="w-4 h-4" />
-            Broadcast
+            {t('pages.notifications.actions.broadcast', 'Broadcast')}
           </Button>
           {unreadCount > 0 && (
             <Button 
@@ -160,7 +174,7 @@ export default function AdminNotificationsPage() {
               className="flex items-center gap-2"
             >
               <CheckCircle2 className="w-4 h-4" />
-              Mark All Read
+              {t('topbar.markAllRead', 'Mark all read')}
             </Button>
           )}
           {notifications.length > 0 && (
@@ -173,12 +187,12 @@ export default function AdminNotificationsPage() {
               {isClearingAll ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Clearing...
+                  {t('pages.notifications.actions.clearing', 'Clearing...')}
                 </>
               ) : (
                 <>
                   <Trash2 className="w-4 h-4" />
-                  Clear All
+                  {t('topbar.clearAll', 'Clear all')}
                 </>
               )}
             </Button>
@@ -200,25 +214,26 @@ export default function AdminNotificationsPage() {
       {/* Notifications List */}
       <Card className="bg-white border-[#E0E0E0]">
         <CardHeader>
-          <CardTitle>All Notifications</CardTitle>
+          <CardTitle>{t('pages.notifications.list.title', 'All Notifications')}</CardTitle>
           <CardDescription>
-            {loading ? 'Loading...' : `${filteredNotifications.length} result(s)`}
+            {loading ? t('common.loading', 'Loading...') : t('pages.notifications.list.results', '{{count}} result(s)')
+              .replace('{{count}}', String(filteredNotifications.length))}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="text-center py-12 text-[#757575]">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p>Loading notifications...</p>
+              <p>{t('pages.notifications.list.loading', 'Loading notifications...')}</p>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="text-center py-12 text-[#757575]">
               <Bell className="w-16 h-16 mx-auto mb-4 text-[#BDBDBD]" />
-              <h3 className="text-lg font-medium mb-2">No notifications</h3>
+              <h3 className="text-lg font-medium mb-2">{t('pages.notifications.empty.title', 'No notifications')}</h3>
               <p className="text-sm">
                 {notifications.length === 0 
-                  ? "No notifications in the system." 
-                  : "No notifications match your current filters."
+                  ? t('pages.notifications.empty.none', 'No notifications in the system.')
+                  : t('pages.notifications.empty.noMatch', 'No notifications match your current filters.')
                 }
               </p>
             </div>

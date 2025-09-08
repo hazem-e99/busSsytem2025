@@ -2,13 +2,14 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
 import { useToast } from '@/components/ui/Toast';
 import { Shield, ArrowLeft } from 'lucide-react';
 import { authAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
+import LanguageSwitcher from '@/components/ui/LanguageSwitcher';
 
 function ResetPasswordVerificationForm() {
   const [verificationCode, setVerificationCode] = useState('');
@@ -19,6 +20,7 @@ function ResetPasswordVerificationForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { showToast } = useToast();
+  const { t } = useI18n();
   
   const email = searchParams.get('email') || '';
 
@@ -26,7 +28,7 @@ function ResetPasswordVerificationForm() {
   useEffect(() => {
     if (isVerified) {
       console.log('🔄 Redirecting to new password page...');
-      router.push(`/auth/new-password?email=${encodeURIComponent(email)}&resetToken=${encodeURIComponent(verificationCode)}`);
+  router.push(`/auth/new-password?email=${encodeURIComponent(email)}&resetToken=${encodeURIComponent(verificationCode)}`);
     }
   }, [isVerified, email, verificationCode, router]);
 
@@ -50,8 +52,8 @@ function ResetPasswordVerificationForm() {
         setIsVerified(true);
         showToast({ 
           type: 'success', 
-          title: 'Verification Successful!', 
-          message: 'Please enter your new password.' 
+          title: t('pages.auth.resetPasswordVerification.toasts.successTitle', 'Verification Successful!'), 
+          message: t('pages.auth.resetPasswordVerification.toasts.successMessage', 'Please enter your new password.') 
         });
         
         // Set verified state - useEffect will handle redirect
@@ -61,8 +63,8 @@ function ResetPasswordVerificationForm() {
         console.log('⚠️ Verification failed, but proceeding to new password page...');
         showToast({ 
           type: 'warning', 
-          title: 'Verification Skipped', 
-          message: 'Proceeding to password reset...' 
+          title: t('pages.auth.resetPasswordVerification.toasts.skippedTitle', 'Verification Skipped'), 
+          message: t('pages.auth.resetPasswordVerification.toasts.skippedMessage', 'Proceeding to password reset...') 
         });
         
         // Set verified state to trigger redirect
@@ -71,11 +73,11 @@ function ResetPasswordVerificationForm() {
       
     } catch {
       console.error('Verification failed:', Error);
-      setError('Verification failed. Please try again.');
+      setError(t('pages.auth.resetPasswordVerification.errors.failed', 'Verification failed. Please try again.'));
       showToast({ 
         type: 'error', 
-        title: 'Error!', 
-        message: 'Verification failed. Please try again.' 
+        title: t('pages.auth.resetPasswordVerification.toasts.errorTitle', 'Error!'), 
+        message: t('pages.auth.resetPasswordVerification.toasts.errorMessage', 'Verification failed. Please try again.') 
       });
     } finally {
       setIsLoading(false);
@@ -94,13 +96,14 @@ function ResetPasswordVerificationForm() {
   if (isVerified) {
     // Show loading while redirecting
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8 relative">
+        <div className="absolute top-4 right-4 z-10"><LanguageSwitcher /></div>
         <Card className="w-full max-w-md">
           <CardContent className="p-8">
             <div className="text-center">
               <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto mb-4"></div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Verification Successful!</h2>
-              <p className="text-gray-600">Redirecting to password reset...</p>
+              <h2 className="text-2xl font-bold text-text-primary mb-2">{t('pages.auth.resetPasswordVerification.loading.successTitle', 'Verification Successful!')}</h2>
+              <p className="text-text-secondary">{t('pages.auth.resetPasswordVerification.loading.redirecting', 'Redirecting to password reset...')}</p>
             </div>
           </CardContent>
         </Card>
@@ -109,35 +112,37 @@ function ResetPasswordVerificationForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen relative overflow-hidden bg-background flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Top-right language switcher */}
+      <div className="absolute top-4 right-4 z-10"><LanguageSwitcher /></div>
+      <Card className="w-full max-w-md border border-white/10 bg-background/70 backdrop-blur-xl shadow-2xl rounded-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-blue-100 mb-4">
-            <Shield className="h-8 w-8 text-blue-600" />
+          <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-r from-primary to-primary-hover mb-4 shadow-xl">
+            <Shield className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            Enter Verification Code
+          <CardTitle className="text-2xl font-bold text-text-primary">
+            {t('pages.auth.resetPasswordVerification.title', 'Enter Verification Code')}
           </CardTitle>
-          <CardDescription className="text-gray-600">
-            We&apos;ve sent a verification code to:
+          <CardDescription className="text-text-secondary">
+            {t('pages.auth.resetPasswordVerification.description', "We've sent a verification code to:")}
             <br />
-            <span className="font-medium text-gray-900">{email}</span>
+            <span className="font-medium text-text-primary">{email}</span>
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="verificationCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Verification Code
+              <label htmlFor="verificationCode" className="block text-sm font-medium text-text-primary mb-1">
+                {t('pages.auth.resetPasswordVerification.fields.verificationCode', 'Verification Code')}
               </label>
               <Input
                 id="verificationCode"
                 type="text"
                 value={verificationCode}
                 onChange={(e) => setVerificationCode(e.target.value)}
-                placeholder="Enter verification code"
+                placeholder={t('pages.auth.resetPasswordVerification.placeholders.verificationCode', 'Enter verification code')}
                 required
-                className="w-full"
+                className="w-full h-11 rounded-xl bg-background/70 transition-colors focus:ring-2 focus:ring-primary/40 focus:border-primary"
                 maxLength={6}
               />
             </div>
@@ -149,9 +154,9 @@ function ResetPasswordVerificationForm() {
             <Button 
               type="submit" 
               disabled={isLoading || !verificationCode}
-              className="w-full"
+              className="w-full h-12 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-white shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-0.5 active:translate-y-0"
             >
-              {isLoading ? 'Verifying...' : 'Verify Code'}
+              {isLoading ? t('pages.auth.resetPasswordVerification.cta.verifying', 'Verifying...') : t('pages.auth.resetPasswordVerification.cta.verify', 'Verify Code')}
             </Button>
 
             <div className="space-y-3">
@@ -161,17 +166,17 @@ function ResetPasswordVerificationForm() {
                 onClick={handleResendCode}
                 className="w-full"
               >
-                Resend Code
+                {t('pages.auth.resetPasswordVerification.cta.resend', 'Resend Code')}
               </Button>
               
               <Button
                 type="button"
                 variant="ghost"
                 onClick={handleBackToLogin}
-                className="flex items-center gap-2 mx-auto"
+                className="flex items-center gap-2 mx-auto text-text-secondary hover:text-text-primary"
               >
                 <ArrowLeft className="h-4 w-4" />
-                Back to Login
+                {t('pages.auth.resetPasswordVerification.cta.backToLogin', 'Back to Login')}
               </Button>
             </div>
           </form>
@@ -181,16 +186,21 @@ function ResetPasswordVerificationForm() {
   );
 }
 
+function FallbackLoader() {
+  const { t } = useI18n();
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+        <p className="text-text-secondary">{t('common.loading', 'Loading...')}</p>
+      </div>
+    </div>
+  );
+}
+
 export default function ResetPasswordVerificationPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<FallbackLoader />}>
       <ResetPasswordVerificationForm />
     </Suspense>
   );

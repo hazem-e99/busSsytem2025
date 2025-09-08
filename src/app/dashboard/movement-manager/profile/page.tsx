@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Card, CardContent, CardDescription, CardTitle, CardHeader } from '@/components/ui/Card';
+import Image from 'next/image';
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
@@ -9,12 +10,12 @@ import {
   User, 
   Mail, 
   Phone, 
-  Camera, 
+  
   Save, 
   Edit3, 
   X,
   Shield,
-  Settings,
+  
   CheckCircle,
   AlertCircle,
   RefreshCw,
@@ -25,6 +26,7 @@ import {
   Route
 } from 'lucide-react';
 import { userAPI } from '@/lib/api';
+import { useI18n } from '@/contexts/LanguageContext';
 
 interface MovementManagerProfile {
   id: number;
@@ -39,6 +41,7 @@ interface MovementManagerProfile {
 }
 
 export default function MovementManagerProfilePage() {
+  const { t } = useI18n();
   const [profile, setProfile] = useState<MovementManagerProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -46,6 +49,7 @@ export default function MovementManagerProfilePage() {
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [showSensitiveData, setShowSensitiveData] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
@@ -73,7 +77,7 @@ export default function MovementManagerProfilePage() {
           email: response.email || '',
           phoneNumber: response.phoneNumber || '',
           nationalId: response.nationalId || '',
-          profilePictureUrl: response.profilePictureUrl || 'https://example.com/default-profile.png',
+          profilePictureUrl: response.profilePictureUrl || '/avatar-placeholder.svg',
           status: response.status || 'Active',
           role: response.role || 'MovementManager'
         };
@@ -124,24 +128,24 @@ export default function MovementManagerProfilePage() {
 
       // Check if at least one field is provided
       if (!trimmedData.firstName && !trimmedData.lastName && !trimmedData.email && !trimmedData.phoneNumber) {
-        alert('Please fill in at least one field to update.');
+  alert(t('pages.movementManager.profile.alerts.fillOne', 'Please fill in at least one field to update.'));
         return;
       }
 
       // Validate name lengths
       if (trimmedData.firstName && (trimmedData.firstName.length < 2 || trimmedData.firstName.length > 50)) {
-        alert('First name must be between 2 and 50 characters.');
+  alert(t('pages.movementManager.profile.alerts.firstNameLength', 'First name must be between 2 and 50 characters.'));
       return;
     }
 
       if (trimmedData.lastName && (trimmedData.lastName.length < 2 || trimmedData.lastName.length > 50)) {
-        alert('Last name must be between 2 and 50 characters.');
+  alert(t('pages.movementManager.profile.alerts.lastNameLength', 'Last name must be between 2 and 50 characters.'));
       return;
     }
 
       // Validate email format
       if (trimmedData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedData.email)) {
-        alert('Please enter a valid email address.');
+  alert(t('pages.movementManager.profile.alerts.invalidEmail', 'Please enter a valid email address.'));
         return;
       }
 
@@ -158,11 +162,11 @@ export default function MovementManagerProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile updated successfully!');
+        alert(t('pages.movementManager.profile.alerts.updated', 'Profile updated successfully!'));
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
-      alert('Failed to update profile. Please try again.');
+      alert(t('pages.movementManager.profile.alerts.updateFailed', 'Failed to update profile. Please try again.'));
     } finally {
       setIsSaving(false);
     }
@@ -188,13 +192,13 @@ export default function MovementManagerProfilePage() {
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
+  alert(t('pages.movementManager.profile.alerts.selectImage', 'Please select an image file.'));
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size should not exceed 5MB.');
+  alert(t('pages.movementManager.profile.alerts.imageTooLarge', 'Image size should not exceed 5MB.'));
       return;
     }
 
@@ -213,11 +217,11 @@ export default function MovementManagerProfilePage() {
         window.dispatchEvent(new StorageEvent('storage'));
         window.dispatchEvent(new CustomEvent('profileUpdated'));
         
-        alert('Profile picture updated successfully!');
+        alert(t('pages.movementManager.profile.alerts.pictureUpdated', 'Profile picture updated successfully!'));
       }
     } catch (error) {
       console.error('Failed to update profile picture:', error);
-      alert('Failed to update profile picture. Please try again.');
+      alert(t('pages.movementManager.profile.alerts.pictureUpdateFailed', 'Failed to update profile picture. Please try again.'));
     } finally {
       setIsUploadingImage(false);
       if (fileInputRef.current) {
@@ -228,7 +232,8 @@ export default function MovementManagerProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return 'https://example.com/default-profile.png';
+    if (!imagePath) return '/avatar-placeholder.svg';
+    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -249,16 +254,16 @@ export default function MovementManagerProfilePage() {
 
   // Get avatar display
   const getAvatarDisplay = () => {
-    if (profile?.profilePictureUrl) {
+    const hasImage = Boolean(profile?.profilePictureUrl) && !avatarError;
+    if (hasImage) {
       return (
-        <img
-          src={buildImageUrl(profile.profilePictureUrl)}
+        <Image
+          src={buildImageUrl(profile!.profilePictureUrl)}
           alt="Profile"
-          className="w-full h-full object-cover rounded-full"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            target.src = 'https://example.com/default-profile.png';
-          }}
+          fill
+          unoptimized
+          className="object-cover rounded-full"
+          onError={() => setAvatarError(true)}
         />
       );
     }
@@ -268,6 +273,10 @@ export default function MovementManagerProfilePage() {
       </div>
     );
   };
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [profile?.profilePictureUrl]);
 
   // Mask sensitive data
   const maskData = (data: string, visibleChars: number = 4) => {
@@ -314,11 +323,11 @@ export default function MovementManagerProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-teal-50 to-cyan-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl shadow-xl p-12 text-center max-w-md">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Profile Not Found</h1>
-          <p className="text-gray-600 mb-6">Unable to load profile information.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">{t('pages.movementManager.profile.notFound.title', 'Profile Not Found')}</h1>
+          <p className="text-gray-600 mb-6">{t('pages.movementManager.profile.notFound.message', 'Unable to load profile information.')}</p>
           <Button onClick={fetchProfile} className="bg-teal-600 hover:bg-teal-700">
             <RefreshCw className="w-4 h-4 mr-2" />
-            Try Again
+            {t('pages.movementManager.profile.notFound.tryAgain', 'Try Again')}
           </Button>
         </div>
       </div>
@@ -333,7 +342,7 @@ export default function MovementManagerProfilePage() {
         <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-6">
-              <div className="w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-teal-500 to-cyan-600">
+              <div className="relative w-20 h-20 rounded-full overflow-hidden border-4 border-white shadow-lg bg-gradient-to-br from-teal-500 to-cyan-600">
                 {getAvatarDisplay()}
               </div>
             <div>
@@ -343,17 +352,17 @@ export default function MovementManagerProfilePage() {
               </h1>
                   <Badge className="bg-gradient-to-r from-teal-100 to-cyan-100 text-teal-800 border-teal-200">
                     <Navigation className="w-3 h-3 mr-1" />
-                    {profile.role}
+                    {t('roles.movementManager', 'Movement Manager')}
                   </Badge>
                 </div>
-                <p className="text-gray-600 text-lg">Movement Manager</p>
+                <p className="text-gray-600 text-lg">{t('roles.movementManager', 'Movement Manager')}</p>
                 <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <CheckCircle className="w-4 h-4 text-green-500" />
-                    {profile.status}
+                    {profile.status === 'Active' ? t('common.status.active', 'Active') : profile.status}
                   </span>
                   <span>•</span>
-                  <span>Last updated: {lastRefresh.toLocaleTimeString()}</span>
+                  <span>{t('pages.movementManager.profile.header.lastUpdated', 'Last updated')}: {lastRefresh.toLocaleTimeString()}</span>
                 </div>
               </div>
             </div>
@@ -376,14 +385,14 @@ export default function MovementManagerProfilePage() {
                 ) : (
                   <Upload className="w-4 h-4 mr-2" />
                 )}
-                {isUploadingImage ? 'Uploading...' : 'Change Photo'}
+                {isUploadingImage ? t('pages.movementManager.profile.header.uploading', 'Uploading...') : t('pages.movementManager.profile.header.changePhoto', 'Change Photo')}
                   </Button>
               <Button
                 onClick={() => setIsEditing(!isEditing)}
                 className="bg-gradient-to-r from-cyan-600 to-cyan-700 hover:from-cyan-700 hover:to-cyan-800 text-white shadow-lg w-full sm:w-auto"
               >
                 <Edit3 className="w-4 h-4 mr-2" />
-                {isEditing ? 'Cancel Edit' : 'Edit Profile'}
+                {isEditing ? t('pages.movementManager.profile.header.cancelEdit', 'Cancel Edit') : t('pages.movementManager.profile.header.editProfile', 'Edit Profile')}
                   </Button>
             </div>
           </div>
@@ -397,17 +406,17 @@ export default function MovementManagerProfilePage() {
               <div className="bg-gradient-to-r from-teal-600 to-cyan-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <Route className="w-5 h-5" />
-                  Manager Overview
+                  {t('pages.movementManager.profile.overview.title', 'Manager Overview')}
                 </CardTitle>
                 <CardDescription className="text-teal-100">
-                  Your movement management profile summary
+                  {t('pages.movementManager.profile.overview.description', 'Your movement management profile summary')}
                 </CardDescription>
               </div>
               <CardContent className="p-6 space-y-6">
                 
                 {/* Avatar Section */}
                 <div className="flex justify-center">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl">
+                  <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-xl">
                   {getAvatarDisplay()}
                   </div>
                 </div>
@@ -422,22 +431,22 @@ export default function MovementManagerProfilePage() {
                     <div className={`w-2 h-2 rounded-full mr-2 ${
                       profile.status === 'Active' ? 'bg-green-500' : 'bg-red-500'
                     }`}></div>
-                    {profile.status}
+                    {profile.status === 'Active' ? t('common.status.active', 'Active') : profile.status}
                   </Badge>
                 </div>
 
                 {/* Quick Stats */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Manager ID</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.movementManager.profile.overview.managerId', 'Manager ID')}</span>
                     <span className="font-mono text-sm font-bold text-gray-900">#{profile.id}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <span className="text-sm font-medium text-gray-600">Role Level</span>
+                    <span className="text-sm font-medium text-gray-600">{t('pages.movementManager.profile.overview.roleLevel', 'Role Level')}</span>
                     <Badge className="bg-teal-100 text-teal-800">
                       <Navigation className="w-3 h-3 mr-1" />
-                      Manager
+                      {t('pages.movementManager.profile.overview.roleManager', 'Manager')}
                     </Badge>
                   </div>
                 </div>
@@ -446,11 +455,11 @@ export default function MovementManagerProfilePage() {
                 <div className="space-y-3">
                   <h4 className="font-semibold text-gray-900 flex items-center gap-2">
                     <Shield className="w-4 h-4 text-teal-600" />
-                    Security Information
+                    {t('pages.movementManager.profile.overview.securityInfo', 'Security Information')}
                   </h4>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">National ID</span>
+                      <span className="text-sm text-gray-600">{t('pages.movementManager.profile.overview.nationalId', 'National ID')}</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm">
                           {showSensitiveData ? profile.nationalId : maskData(profile.nationalId)}
@@ -481,10 +490,10 @@ export default function MovementManagerProfilePage() {
               <div className="bg-gradient-to-r from-cyan-600 to-blue-600 p-6 text-white">
                 <CardTitle className="flex items-center gap-2 text-white">
                   <User className="w-5 h-5" />
-                  Personal Information
+                  {t('pages.movementManager.profile.personal.title', 'Personal Information')}
                 </CardTitle>
                 <CardDescription className="text-cyan-100">
-                  Manage your personal details and contact information
+                  {t('pages.movementManager.profile.personal.description', 'Manage your personal details and contact information')}
                 </CardDescription>
               </div>
               <CardContent className="p-6">
@@ -493,7 +502,7 @@ export default function MovementManagerProfilePage() {
                   {/* First Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      First Name
+                      {t('pages.movementManager.profile.personal.firstName', 'First Name')}
                     </label>
                     <div className="relative">
                       <Input
@@ -501,7 +510,7 @@ export default function MovementManagerProfilePage() {
                         value={formData.firstName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your first name"
+                        placeholder={t('pages.movementManager.profile.personal.placeholders.firstName', 'Enter your first name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-teal-300 focus:border-teal-500 focus:ring-teal-500' 
@@ -519,7 +528,7 @@ export default function MovementManagerProfilePage() {
                   {/* Last Name */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Last Name
+                      {t('pages.movementManager.profile.personal.lastName', 'Last Name')}
                     </label>
                     <div className="relative">
                       <Input
@@ -527,7 +536,7 @@ export default function MovementManagerProfilePage() {
                         value={formData.lastName}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your last name"
+                        placeholder={t('pages.movementManager.profile.personal.placeholders.lastName', 'Enter your last name')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-teal-300 focus:border-teal-500 focus:ring-teal-500' 
@@ -545,7 +554,7 @@ export default function MovementManagerProfilePage() {
                   {/* Email */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Email Address
+                      {t('pages.movementManager.profile.personal.email', 'Email Address')}
                     </label>
                     <div className="relative">
                       <Input
@@ -554,7 +563,7 @@ export default function MovementManagerProfilePage() {
                         value={formData.email}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your email"
+                        placeholder={t('pages.movementManager.profile.personal.placeholders.email', 'Enter your email')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-teal-300 focus:border-teal-500 focus:ring-teal-500' 
@@ -572,7 +581,7 @@ export default function MovementManagerProfilePage() {
                   {/* Phone Number */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
-                      Phone Number
+                      {t('pages.movementManager.profile.personal.phone', 'Phone Number')}
                     </label>
                     <div className="relative">
                       <Input
@@ -580,7 +589,7 @@ export default function MovementManagerProfilePage() {
                         value={formData.phoneNumber}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder="Enter your phone number"
+                        placeholder={t('pages.movementManager.profile.personal.placeholders.phone', 'Enter your phone number')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-teal-300 focus:border-teal-500 focus:ring-teal-500' 
@@ -599,20 +608,20 @@ export default function MovementManagerProfilePage() {
                 {/* Action Buttons */}
                 {isEditing && (
                   <div className="flex gap-4 pt-6 mt-6 border-t border-gray-200">
-                    <Button
+          <Button
                       onClick={handleSave}
                       disabled={isSaving}
                       className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white shadow-lg flex-1"
                     >
-                      {isSaving ? (
+            {isSaving ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Saving...
+              {t('common.saving', 'Saving...')}
                         </>
-                      ) : (
+            ) : (
                         <>
                           <Save className="w-4 h-4 mr-2" />
-                          Save Changes
+              {t('common.saveChanges', 'Save Changes')}
                         </>
                       )}
                     </Button>
@@ -622,7 +631,7 @@ export default function MovementManagerProfilePage() {
                       className="flex-1 border-gray-300 hover:bg-gray-50"
                     >
                       <X className="w-4 h-4 mr-2" />
-                      Cancel
+            {t('common.cancel', 'Cancel')}
                     </Button>
                     </div>
                 )}
@@ -634,10 +643,9 @@ export default function MovementManagerProfilePage() {
                       <Navigation className="w-4 h-4 text-teal-600" />
                   </div>
                   <div>
-                      <h4 className="font-semibold text-teal-900 mb-1">Movement Manager</h4>
+                      <h4 className="font-semibold text-teal-900 mb-1">{t('roles.movementManager', 'Movement Manager')}</h4>
                       <p className="text-sm text-teal-700">
-                        You have management access to oversee bus routes, coordinate schedules, 
-                        and manage transportation operations. Your profile is synchronized across all management systems.
+                        {t('pages.movementManager.profile.footer.message', 'You have management access to oversee bus routes, coordinate schedules, and manage transportation operations. Your profile is synchronized across all management systems.')}
                       </p>
                     </div>
                   </div>
