@@ -10,7 +10,8 @@ export async function GET(request: Request) {
     // If no URL, serve default
     if (!url) {
       const file = await readDefault()
-      return new NextResponse(file, { headers: { 'Content-Type': 'image/png' } })
+      const ab = toArrayBuffer(file)
+      return new NextResponse(ab, { headers: { 'Content-Type': 'image/png' } })
     }
 
     // If it's a data URL or local asset, just redirect to it
@@ -32,25 +33,35 @@ export async function GET(request: Request) {
     } catch {}
 
     const file = await readDefault()
-    return new NextResponse(file, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' } })
+    const ab = toArrayBuffer(file)
+    return new NextResponse(ab, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' } })
   } catch {
     const file = await readDefault()
-    return new NextResponse(file, { headers: { 'Content-Type': 'image/png' } })
+    const ab = toArrayBuffer(file)
+    return new NextResponse(ab, { headers: { 'Content-Type': 'image/png' } })
   }
 }
 
-async function readDefault(): Promise<Buffer> {
+async function readDefault(): Promise<Uint8Array> {
   const filePath = path.join(process.cwd(), 'public', 'logo2.png')
   try {
-    return await readFile(filePath)
+    const buf = await readFile(filePath)
+    return new Uint8Array(buf)
   } catch {
     // In case asset missing, return 1x1 png
     const onePx = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAk8B5s3kq/MAAAAASUVORK5CYII=',
       'base64'
     )
-    return onePx
+    return new Uint8Array(onePx)
   }
+}
+
+function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
+  // Create a detached ArrayBuffer with the same bytes to satisfy TS/runtime
+  const copy = new Uint8Array(u8.byteLength)
+  copy.set(u8)
+  return copy.buffer
 }
 
 
