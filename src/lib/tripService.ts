@@ -17,7 +17,7 @@ interface ApiResponse<T> {
 }
 
 class TripService {
-  private baseUrl = '/Trips';
+  private baseUrl = '/Trip';
 
   async getAll(): Promise<TripResponse[]> {
     try {
@@ -75,7 +75,7 @@ class TripService {
 
   async getByDate(date: string): Promise<TripResponse[]> {
     try {
-      const response = await api.get<ApiResponse<TripResponse[]>>(`${this.baseUrl}/date/${date}`);
+      const response = await api.get<ApiResponse<TripResponse[]>>(`${this.baseUrl}/by-date/${date}`);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: unknown) {
       const apiError = error as ApiErrorResponse;
@@ -86,7 +86,7 @@ class TripService {
 
   async getByDriver(driverId: string): Promise<TripResponse[]> {
     try {
-      const response = await api.get<ApiResponse<TripResponse[]>>(`${this.baseUrl}/driver/${driverId}`);
+      const response = await api.get<ApiResponse<TripResponse[]>>(`${this.baseUrl}/by-driver/${driverId}`);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: unknown) {
       const apiError = error as ApiErrorResponse;
@@ -97,7 +97,7 @@ class TripService {
 
   async getByBus(busId: string): Promise<TripResponse[]> {
     try {
-      const response = await api.get<ApiResponse<TripResponse[]>>(`${this.baseUrl}/bus/${busId}`);
+      const response = await api.get<ApiResponse<TripResponse[]>>(`${this.baseUrl}/by-bus/${busId}`);
       return Array.isArray(response.data) ? response.data : [];
     } catch (error: unknown) {
       const apiError = error as ApiErrorResponse;

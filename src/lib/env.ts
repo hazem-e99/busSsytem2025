@@ -43,11 +43,11 @@ export const API_CONFIG = {
   
   // Trip API endpoints
   TRIP_ENDPOINTS: {
-    GET_ALL: '/Trips',
-    GET_BY_ID: '/Trips/{id}',
-    CREATE: '/Trips',
-    UPDATE: '/Trips/{id}',
-    DELETE: '/Trips/{id}',
+    GET_ALL: '/Trip',
+    GET_BY_ID: '/Trip/{id}',
+    CREATE: '/Trip',
+    UPDATE: '/Trip/{id}',
+    DELETE: '/Trip/{id}',
   },
   
   // Payment API endpoints
