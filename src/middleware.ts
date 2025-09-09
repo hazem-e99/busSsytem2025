@@ -3,12 +3,23 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const userCookie = request.cookies.get('user');
+
+  // Public routes that don't require authentication
+  const publicRoutes = [
+    '/auth/login',
+    '/auth/register',
+    '/auth/forgot-password',
+    '/auth/reset-password',
+    '/auth/new-password',
+    '/auth/verification',
+    '/auth/reset-password-verification',
+  ];
+
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
   
   // Handle dashboard routing
   if (pathname === '/dashboard') {
-    // Get user from cookie
-    const userCookie = request.cookies.get('user');
-    
     if (userCookie) {
       try {
         const user = JSON.parse(decodeURIComponent(userCookie.value));
@@ -24,6 +35,11 @@ export function middleware(request: NextRequest) {
     } else {
       return NextResponse.redirect(new URL('/auth/login', request.url));
     }
+  }
+
+  // If the route is not public and user is not authenticated, redirect to login
+  if (!isPublicRoute && !userCookie) {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
   
   // Handle case sensitivity issues
@@ -52,7 +68,7 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/dashboard',
-    '/dashboard/:path*',
+    // Protect all app routes except Next.js internals and static assets
+    '/((?!_next/|favicon.ico|favico2n.ico|api/).*)',
   ],
 };

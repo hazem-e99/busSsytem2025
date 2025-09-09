@@ -1,6 +1,7 @@
 "use client";
 import { ReactNode } from "react";
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Topbar } from '@/components/layout/Topbar';
 import { Sidebar } from '@/components/layout/Sidebar';
@@ -9,6 +10,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 export default function LayoutShell({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const pathname = usePathname();
+  const router = useRouter();
   const userRole = user?.role || 'student';
   const { isRTL } = useI18n();
 
@@ -26,6 +28,14 @@ export default function LayoutShell({ children }: { children: ReactNode }) {
 
   // Check if current route is an auth route or the root welcome page
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname === '/';
+  const isDashboardRoute = pathname.startsWith('/dashboard');
+
+  // Client-side auth guard: prevent rendering any non-auth route without login
+  useEffect(() => {
+    if (!isAuthRoute && !user) {
+      router.replace('/auth/login');
+    }
+  }, [isAuthRoute, user, router]);
 
   // If it's an auth route, render children without layout
   if (isAuthRoute) {
@@ -36,14 +46,22 @@ export default function LayoutShell({ children }: { children: ReactNode }) {
     );
   }
 
-  // Regular layout for all other routes
-  return (
-    <div className="min-h-screen bg-background">
-  <Sidebar userRole={userRole} />
-  <div className={isRTL ? 'lg:mr-72' : 'lg:ml-72'}>
-        <Topbar />
-        <main className="pt-4 px-3 sm:px-6">{children}</main>
+  // Only render full layout for dashboard routes when user exists
+  if (isDashboardRoute && user) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Sidebar userRole={userRole} />
+        <div className={isRTL ? 'lg:mr-72' : 'lg:ml-72'}>
+          <Topbar />
+          <main className="pt-4 px-3 sm:px-6">{children}</main>
+        </div>
       </div>
-    </div>
+    );
+  }
+
+  // For all non-dashboard routes (including 404), render without layout
+  // If user is not logged in, the effect above will redirect; render nothing to avoid flicker
+  return (
+    <div className="min-h-screen bg-background">{user || isAuthRoute ? children : null}</div>
   );
 }
