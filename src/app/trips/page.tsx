@@ -26,6 +26,7 @@ export default function TripsPage() {
   const [driverNameOptions, setDriverNameOptions] = useState<string[]>([]);
   const [supervisorNameOptions, setSupervisorNameOptions] = useState<string[]>([]);
   const [, force] = useReducer((x: number) => x + 1, 0);
+  const [now, setNow] = useState<Date | null>(null);
   const [renewingId, setRenewingId] = useState<number | null>(null);
 
   const fetchTrips = async () => {
@@ -54,9 +55,13 @@ export default function TripsPage() {
     fetchTrips();
   }, [tab]);
 
-  // periodic tick to update derived statuses live
+  // establish stable now after mount and periodically update
   useEffect(() => {
-    const id = setInterval(() => force(), getRefreshIntervalMs());
+    setNow(new Date());
+    const id = setInterval(() => {
+      setNow(new Date());
+      force();
+    }, getRefreshIntervalMs());
     return () => clearInterval(id);
   }, []);
 
@@ -186,7 +191,7 @@ export default function TripsPage() {
                     departureTimeOnly: trip.departureTimeOnly as unknown as string,
                     arrivalTimeOnly: trip.arrivalTimeOnly as unknown as string,
                     status: trip.status as unknown as string
-                  });
+                  }, now ?? new Date(0));
                   const rowClass = getRowClassByStatus(derived);
                   return (
                   <tr key={trip.id} className={`border-t ${rowClass}`}>

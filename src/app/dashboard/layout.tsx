@@ -34,7 +34,7 @@ export default function DashboardLayout({
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex items-center justify-center bg-background" suppressHydrationWarning>
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary border-t-transparent mx-auto shadow-lg"></div>
           <p className="mt-6 text-text-secondary text-lg font-medium">Loading your dashboard...</p>
@@ -48,7 +48,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div>
+    <div suppressHydrationWarning>
       <div className="mx-auto w-full max-w-screen-2xl px-3 sm:px-4 lg:px-6 py-6">
         {children}
       </div>

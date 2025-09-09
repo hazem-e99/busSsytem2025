@@ -8,7 +8,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { useI18n } from '@/contexts/LanguageContext';
 
 export default function LayoutShell({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const userRole = user?.role || 'student';
@@ -29,27 +29,29 @@ export default function LayoutShell({ children }: { children: ReactNode }) {
   // Check if current route is an auth route or the root welcome page
   const isAuthRoute = authRoutes.some(route => pathname.startsWith(route)) || pathname === '/';
   const isDashboardRoute = pathname.startsWith('/dashboard');
+  const isTripsRoute = pathname.startsWith('/trips');
+  const isLayoutRoute = isDashboardRoute || isTripsRoute;
 
   // Client-side auth guard: prevent rendering any non-auth route without login
   useEffect(() => {
-    if (!isAuthRoute && !user) {
+    if (!isAuthRoute && !isLoading && !user) {
       router.replace('/auth/login');
     }
-  }, [isAuthRoute, user, router]);
+  }, [isAuthRoute, isLoading, user, router]);
 
   // If it's an auth route, render children without layout
   if (isAuthRoute) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background" suppressHydrationWarning>
         {children}
       </div>
     );
   }
 
-  // Only render full layout for dashboard routes when user exists
-  if (isDashboardRoute && user) {
+  // Only render full layout for selected routes when user exists
+  if (isLayoutRoute && user) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background" suppressHydrationWarning>
         <Sidebar userRole={userRole} />
         <div className={isRTL ? 'lg:mr-72' : 'lg:ml-72'}>
           <Topbar />
@@ -62,6 +64,6 @@ export default function LayoutShell({ children }: { children: ReactNode }) {
   // For all non-dashboard routes (including 404), render without layout
   // If user is not logged in, the effect above will redirect; render nothing to avoid flicker
   return (
-    <div className="min-h-screen bg-background">{user || isAuthRoute ? children : null}</div>
+    <div className="min-h-screen bg-background" suppressHydrationWarning>{(user || isAuthRoute || isLoading) ? children : null}</div>
   );
 }
