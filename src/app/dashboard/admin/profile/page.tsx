@@ -228,8 +228,8 @@ export default function AdminProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return '/avatar-placeholder.svg';
-    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
+    if (!imagePath) return '/logo2.png';
+    if (imagePath.includes('example.com/default-profile.png')) return '/logo2.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -252,22 +252,21 @@ export default function AdminProfilePage() {
   const getAvatarDisplay = () => {
     if (profile?.profilePictureUrl) {
       return (
-  // eslint-disable-next-line @next/next/no-img-element
+      // eslint-disable-next-line @next/next/no-img-element
         <img
           src={buildImageUrl(profile.profilePictureUrl)}
           alt="Profile"
           className="w-full h-full object-cover rounded-full"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            target.src = '/avatar-placeholder.svg';
+            target.src = '/logo2.png';
           }}
         />
       );
     }
     return (
-      <div className="w-full h-full bg-gradient-to-br from-purple-500 via-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-        <Crown className="w-12 h-12 text-white" />
-      </div>
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src="/logo2.png" alt="Profile" className="w-full h-full object-cover rounded-full" />
     );
   };
 

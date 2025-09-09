@@ -26,6 +26,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useI18n } from '@/contexts/LanguageContext';
+import { formatDate } from '@/lib/format';
 
 // Use existing types from the codebase
 type Trip = TripViewModel;
@@ -103,11 +104,7 @@ export default function BookTripPage() {
         const bookingChecks = tripsData.map(trip => checkTripBookingStatus(trip.id));
         await Promise.allSettled(bookingChecks);
         
-        showToast({ 
-          type: 'success', 
-          title: t('pages.student.bookTrip.toast.loadedTitle', 'Trips Loaded Successfully'), 
-          message: t('pages.student.bookTrip.toast.loadedMsg', `Found ${tripsData.length} available trips`) 
-        });
+        // Success toast intentionally removed per requirement to avoid showing load counts
       }
     } catch (error) {
       console.error('❌ Error loading data:', error);
@@ -188,21 +185,26 @@ export default function BookTripPage() {
   };
 
   // Localized status label
-  const statusLabel = (status: TripStatus) => {
-    switch (status) {
-      case 'Scheduled':
-        return t('pages.trips.status.scheduled', 'Scheduled');
-      case 'InProgress':
-        return t('pages.trips.status.inProgress', 'In Progress');
-      case 'Completed':
-        return t('pages.trips.status.completed', 'Completed');
-      case 'Cancelled':
-        return t('pages.trips.status.cancelled', 'Cancelled');
-      case 'Delayed':
-        return t('pages.trips.status.delayed', 'Delayed');
-      default:
-        return status;
-    }
+  const statusLabel = (status: TripStatus | string) => {
+    const normalized = String(status).replace(/\s+/g, '').toLowerCase();
+    const map = isRTL
+      ? {
+          scheduled: 'مجدولة',
+          inprogress: 'قيد التنفيذ',
+          completed: 'مكتملة',
+          cancelled: 'ملغاة',
+          canceled: 'ملغاة',
+          delayed: 'متأخرة',
+        }
+      : {
+          scheduled: 'Scheduled',
+          inprogress: 'In Progress',
+          completed: 'Completed',
+          cancelled: 'Cancelled',
+          canceled: 'Cancelled',
+          delayed: 'Delayed',
+        } as Record<string, string>;
+    return map[normalized] || String(status);
   };
 
   // Get trip details
@@ -569,7 +571,7 @@ export default function BookTripPage() {
                       <div>
                         <div className="font-medium flex items-center gap-1">
                           <Calendar className="w-4 h-4" />
-                          {new Date(trip.tripDate).toLocaleDateString()}
+                          {formatDate(isRTL ? 'ar' : 'en', trip.tripDate)}
                         </div>
                         <div className="text-sm text-gray-500 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -689,7 +691,7 @@ export default function BookTripPage() {
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-gray-500" />
           <span className="font-medium">{t('pages.student.bookTrip.fields.date', 'Date')}:</span>
-                    <span>{new Date(selectedTrip.tripDate).toLocaleDateString()}</span>
+                    <span>{formatDate(isRTL ? 'ar' : 'en', selectedTrip.tripDate)}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />

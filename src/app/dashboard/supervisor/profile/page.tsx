@@ -234,8 +234,8 @@ export default function SupervisorProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return '/avatar-placeholder.svg';
-    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
+    if (!imagePath) return '/logo2.png';
+    if (imagePath.includes('example.com/default-profile.png')) return '/logo2.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -256,7 +256,7 @@ export default function SupervisorProfilePage() {
 
   // Get avatar display
   const getAvatarDisplay = () => {
-    const src = profile?.profilePictureUrl ? buildImageUrl(profile.profilePictureUrl) : '';
+    const src = profile?.profilePictureUrl ? buildImageUrl(profile.profilePictureUrl) : '/logo2.png';
     if (src && !avatarError) {
       return (
         <Image
@@ -271,9 +271,7 @@ export default function SupervisorProfilePage() {
       );
     }
     return (
-      <div className="w-full h-full bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-600 rounded-full flex items-center justify-center">
-        <UserCheck className="w-12 h-12 text-white" />
-      </div>
+      <Image src="/logo2.png" alt="Profile" fill unoptimized className="object-cover rounded-full" />
     );
   };
 

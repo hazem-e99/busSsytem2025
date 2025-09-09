@@ -43,7 +43,18 @@ const departments = [
   'PhysicalEducation', 'TourismAndHotels'
 ];
 
-// yearsOfStudy list intentionally omitted (not used here)
+// Academic Year enum options
+const ACADEMIC_YEAR_OPTIONS = [
+  'PreparatoryYear', 'FirstYear', 'SecondYear', 'ThirdYear', 'FourthYear', 'FifthYear', 'SixthYear', 'SeventhYear',
+  'MastersFirstYear', 'MastersSecondYear', 'MastersThirdYear',
+  'PhDFirstYear', 'PhDSecondYear', 'PhDThirdYear', 'PhDFourthYear', 'PhDFifthYear', 'PhDSixthYear',
+  'ResidencyFirstYear', 'ResidencySecondYear', 'ResidencyThirdYear', 'ResidencyFourthYear', 'ResidencyFifthYear',
+  'FellowshipFirstYear', 'FellowshipSecondYear',
+  'ExchangeStudent', 'VisitingStudent', 'NonDegreeStudent', 'ContinuingEducation',
+  'DiplomaFirstYear', 'DiplomaSecondYear', 'DiplomaThirdYear',
+  'ProfessionalFirstYear', 'ProfessionalSecondYear', 'ProfessionalThirdYear', 'ProfessionalFourthYear',
+  'RepeatYear', 'ThesisWriting', 'DissertationWriting'
+];
 
 interface StudentProfile {
   id: number;
@@ -58,7 +69,7 @@ interface StudentProfile {
   studentProfileId?: number;
   studentAcademicNumber?: string;
   department?: string;
-  yearOfStudy?: number;
+  yearOfStudy?: string;
   emergencyContact?: string;
   emergencyPhone?: string;
 }
@@ -110,7 +121,7 @@ export default function StudentProfilePage() {
           studentProfileId: parseInt(response.id) || 0, // Use user ID as studentUserId
           studentAcademicNumber: '', // Will be filled when user updates
           department: '', // Will be filled when user updates
-          yearOfStudy: response.yearOfStudy || '', // Default value
+          yearOfStudy: response.academicYear || String(response.yearOfStudy || ''),
           emergencyContact: '', // Will be filled when user updates
           emergencyPhone: '' // Will be filled when user updates
         };
@@ -122,7 +133,7 @@ export default function StudentProfilePage() {
           email: profileData.email,
           phoneNumber: profileData.phoneNumber,
           department: profileData.department || '',
-          yearOfStudy: String(profileData.yearOfStudy || 1),
+          yearOfStudy: String(profileData.yearOfStudy || ''),
           emergencyContact: profileData.emergencyContact || '',
           emergencyPhone: profileData.emergencyPhone || ''
         });
@@ -144,19 +155,10 @@ export default function StudentProfilePage() {
   // Handle input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
-    // Special handling for yearOfStudy (keep as string)
-    if (name === 'yearOfStudy') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value || '1'
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   // Handle save
@@ -182,8 +184,10 @@ export default function StudentProfilePage() {
       if (formData.department.trim()) {
         apiData.department = formData.department.trim();
       }
-      if (formData.yearOfStudy && parseInt(formData.yearOfStudy) > 0) {
-        apiData.yearOfStudy = parseInt(formData.yearOfStudy);
+      if (formData.yearOfStudy && formData.yearOfStudy.trim()) {
+        // Backend expects a numeric yearOfStudy per Swagger example; map enum to index if needed
+        const idx = ACADEMIC_YEAR_OPTIONS.indexOf(formData.yearOfStudy.trim());
+        apiData.yearOfStudy = idx >= 0 ? idx + 1 : Number(formData.yearOfStudy);
       }
       if (formData.emergencyContact.trim()) {
         apiData.emergencyContact = formData.emergencyContact.trim();
@@ -215,9 +219,9 @@ export default function StudentProfilePage() {
         return;
       }
 
-      // Validate year of study
-      if (apiData.yearOfStudy && (apiData.yearOfStudy < 1 || apiData.yearOfStudy > 8)) {
-        alert(t('pages.student.profile.alerts.yearRange', 'Year of study must be between 1 and 8.'));
+      // Validate year of study is one of the enum options
+      if (formData.yearOfStudy && !ACADEMIC_YEAR_OPTIONS.includes(formData.yearOfStudy)) {
+        alert(t('pages.student.profile.alerts.yearRange', 'Please select a valid academic year.'));
         return;
       }
 
@@ -337,8 +341,8 @@ export default function StudentProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return '/avatar-placeholder.svg';
-    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
+    if (!imagePath) return '/logo2.png';
+    if (imagePath.includes('example.com/default-profile.png')) return '/logo2.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -362,7 +366,7 @@ export default function StudentProfilePage() {
     if (profile?.profilePictureUrl) {
       return (
         <Image
-          src={imageError ? '/avatar-placeholder.svg' : buildImageUrl(profile.profilePictureUrl)}
+          src={imageError ? '/logo2.png' : buildImageUrl(profile.profilePictureUrl)}
           alt="Profile"
           fill
           sizes="(max-width: 1024px) 80px, 128px"
@@ -559,11 +563,11 @@ export default function StudentProfilePage() {
                     </div>
                   )}
                   
-                  {profile.yearOfStudy && profile.yearOfStudy > 0 && (
+                  {profile.yearOfStudy && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                       <span className="text-sm font-medium text-gray-600">{t('pages.student.profile.yearOfStudy', 'Year of Study')}</span>
                       <Badge className="bg-blue-100 text-blue-800">
-                        {t('pages.student.profile.yearShort', 'Year')} {profile.yearOfStudy}
+                        {profile.yearOfStudy}
                       </Badge>
                     </div>
                   )}
@@ -784,27 +788,28 @@ export default function StudentProfilePage() {
                     </div>
                   </div>
 
-                  {/* Year of Study */}
+                  {/* Year of Study (Academic Year enum) */}
                   <div className="space-y-2">
                     <label className="block text-sm font-semibold text-gray-700">
                       {t('pages.student.profile.yearOfStudy', 'Year of Study')}
                     </label>
                     <div className="relative">
-                      <Input
+                      <Select
                         name="yearOfStudy"
-                        type="number"
-                        min="1"
-                        max="8"
                         value={formData.yearOfStudy}
                         onChange={handleInputChange}
                         disabled={!isEditing}
-                        placeholder={t('pages.student.profile.yearPlaceholder', 'Enter year of study (1-8)')}
                         className={`transition-all duration-200 ${
                           isEditing 
                             ? 'border-green-300 focus:border-green-500 focus:ring-green-500' 
                             : 'bg-gray-50 border-gray-200'
                         }`}
-                      />
+                      >
+                        <option value="">{t('pages.student.profile.yearPlaceholder', 'Select academic year')}</option>
+                        {ACADEMIC_YEAR_OPTIONS.map(y => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </Select>
                       {isEditing && (
                         <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                           <Calendar className="w-4 h-4 text-gray-400" />

@@ -47,10 +47,12 @@ interface BusFilter {
 }
 
 type Mode = 'list' | 'view';
+type TabKey = 'all' | 'filters' | 'completed';
 
 export default function MovementManagerTripsPage() {
   const { t } = useI18n();
   const [mode, setMode] = useState<Mode>('list');
+  const [activeTab, setActiveTab] = useState<TabKey>('all');
   const [items, setItems] = useState<TripResponse[]>([]);
   const [current, setCurrent] = useState<TripResponse | null>(null);
   const [filterDate, setFilterDate] = useState('');
@@ -66,10 +68,16 @@ export default function MovementManagerTripsPage() {
     setError(null);
     try {
       let data: TripResponse[] = [];
-      if (filterDate) data = await tripService.getByDate(filterDate);
-      else if (filterDriver) data = await tripService.getByDriver(filterDriver);
-      else if (filterBus) data = await tripService.getByBus(filterBus);
-      else data = await tripService.getAll();
+      if (activeTab === 'completed') {
+        data = await tripService.getCompleted();
+      } else if (activeTab === 'filters') {
+        if (filterDate) data = await tripService.getByDate(filterDate);
+        else if (filterDriver) data = await tripService.getByDriver(filterDriver);
+        else if (filterBus) data = await tripService.getByBus(filterBus);
+        else data = await tripService.getAll();
+      } else {
+        data = await tripService.getAll();
+      }
       setItems(Array.isArray(data) ? data : []);
     } catch (e: unknown) {
   const error = e as Error;
@@ -77,7 +85,7 @@ export default function MovementManagerTripsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterDate, filterDriver, filterBus, t]);
+  }, [activeTab, filterDate, filterDriver, filterBus, t]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -116,6 +124,30 @@ export default function MovementManagerTripsPage() {
 
       {mode === 'list' && (
         <div className="space-y-4">
+          {/* Tabs */}
+          <div className="flex gap-2 border-b">
+            <button
+              className={`px-3 py-2 text-sm ${activeTab === 'all' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-600'}`}
+              onClick={() => setActiveTab('all')}
+            >
+              {t('pages.movementManager.trips.tabs.all', 'All')}
+            </button>
+            <button
+              className={`px-3 py-2 text-sm ${activeTab === 'filters' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-600'}`}
+              onClick={() => setActiveTab('filters')}
+            >
+              {t('pages.movementManager.trips.tabs.filters', 'Filter')}
+            </button>
+            <button
+              className={`px-3 py-2 text-sm ${activeTab === 'completed' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-600'}`}
+              onClick={() => setActiveTab('completed')}
+            >
+              {t('pages.movementManager.trips.tabs.completed', 'Completed')}
+            </button>
+          </div>
+
+          {/* Filters only visible in filters tab */}
+          {activeTab === 'filters' && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
             <div>
               <label className="text-sm font-medium">{t('pages.movementManager.trips.filters.date')}</label>
@@ -144,6 +176,7 @@ export default function MovementManagerTripsPage() {
               <Button variant="outline" onClick={resetFilters}>{t('pages.movementManager.trips.filters.reset')}</Button>
             </div>
           </div>
+          )}
 
           {error && <div className="text-red-600 text-sm">{t('pages.movementManager.trips.errors.loadFailed', error)}</div>}
 

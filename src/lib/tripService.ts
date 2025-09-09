@@ -128,6 +128,17 @@ class TripService {
     }
   }
 
+  async getCompleted(): Promise<TripResponse[]> {
+    try {
+      const response = await api.get<ApiResponse<TripResponse[]>>(`/Trip/completed`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error: unknown) {
+      const apiError = error as ApiErrorResponse;
+      console.error('Failed to fetch completed trips:', error);
+      throw new Error(apiError?.response?.data?.message || 'Failed to fetch completed trips');
+    }
+  }
+
   async getToday(): Promise<TripResponse[]> {
     try {
       const today = new Date().toISOString().split('T')[0];

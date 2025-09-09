@@ -206,9 +206,9 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
                     key={item.name}
                     className="flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 text-gray-400 cursor-not-allowed opacity-60 bg-gray-50"
                   >
-                    <item.icon className="mr-3 h-5 w-5" />
+                    <item.icon className={cn(isRTL ? 'ml-3' : 'mr-3', 'h-5 w-5')} />
                     <span className="flex-1">{t(`nav.${item.name.toLowerCase().replace(/\s+/g,'_')}`, item.name)}</span>
-                    <span className="ml-auto text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium">
+                    <span className={cn('text-xs bg-orange-100 text-orange-600 px-2 py-1 rounded-full font-medium', isRTL ? 'mr-auto' : 'ml-auto')}>
                       {t('common.soon', 'Soon')}
                     </span>
                   </div>
@@ -229,12 +229,13 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
                 >
                   {/* Active indicator */}
                   {isActive && (
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full"></div>
+                    <div className={cn('absolute top-0 bottom-0 w-1 bg-white', isRTL ? 'right-0 rounded-l-full' : 'left-0 rounded-r-full')}></div>
                   )}
                   
                   {/* Icon */}
                   <div className={cn(
-                    'mr-3 h-5 w-5 transition-all duration-300',
+                    isRTL ? 'ml-3' : 'mr-3',
+                    'h-5 w-5 transition-all duration-300',
                     isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'
                   )}>
                     <item.icon className="w-full h-full" />
@@ -283,7 +284,7 @@ export const Sidebar = ({ userRole }: SidebarProps) => {
               )}>
                 <config.icon className="w-6 h-6 text-white" />
               </div>
-              <div className="ml-4 flex-1">
+              <div className={cn(isRTL ? 'mr-4' : 'ml-4', 'flex-1')}>
                 <p className="text-sm font-bold text-gray-900 capitalize">
                   {userRole.replace('-', ' ')}
                 </p>

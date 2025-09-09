@@ -13,6 +13,7 @@ import { useI18n } from '@/contexts/LanguageContext';
 
 export default function TripsPage() {
   const { t } = useI18n();
+  const [tab, setTab] = useState<'all' | 'completed'>('all');
   const [trips, setTrips] = useState<TripViewModel[]>([]);
   const [allTrips, setAllTrips] = useState<TripViewModel[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -25,11 +26,14 @@ export default function TripsPage() {
   const [driverNameOptions, setDriverNameOptions] = useState<string[]>([]);
   const [supervisorNameOptions, setSupervisorNameOptions] = useState<string[]>([]);
   const [, force] = useReducer((x: number) => x + 1, 0);
+  const [renewingId, setRenewingId] = useState<number | null>(null);
 
   const fetchTrips = async () => {
     try {
       setLoading(true);
-      const data: TripViewModel[] = await tripService.getAll();
+      const data: TripViewModel[] = tab === 'completed'
+        ? await tripService.getCompleted() as unknown as TripViewModel[]
+        : await tripService.getAll();
       setAllTrips(data);
       // Build dropdown options
       const unique = (arr: string[]) => Array.from(new Set(arr.filter(Boolean))).sort();
@@ -48,7 +52,7 @@ export default function TripsPage() {
 
   useEffect(() => {
     fetchTrips();
-  }, []);
+  }, [tab]);
 
   // periodic tick to update derived statuses live
   useEffect(() => {
@@ -82,6 +86,19 @@ export default function TripsPage() {
     }
   };
 
+  const onRenew = async (id: number) => {
+    try {
+      setRenewingId(id);
+      await tripService.renew(id);
+      await fetchTrips();
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      console.error('Renew failed:', errorMessage);
+    } finally {
+      setRenewingId(null);
+    }
+  };
+
   const getRowClassByStatus = (status: string) => {
     const s = status.toLowerCase();
     if (s === 'in-progress') return 'bg-yellow-50';
@@ -101,34 +118,47 @@ export default function TripsPage() {
         </div>
       </div>
 
-      <Card className="p-4 space-y-3">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-          <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
-            <option value="">{t('pages.trips.filters.allDates', 'All Dates')}</option>
-            {dateOptions.map((d) => (
-              <option key={d} value={d}>{d}</option>
-            ))}
-          </Select>
-          <Select value={busNumberFilter} onChange={(e) => setBusNumberFilter(e.target.value)}>
-            <option value="">{t('pages.trips.filters.allBuses', 'All Buses')}</option>
-            {busNumberOptions.map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </Select>
-          <Select value={driverNameFilter} onChange={(e) => setDriverNameFilter(e.target.value)}>
-            <option value="">{t('pages.trips.filters.allDrivers', 'All Drivers')}</option>
-            {driverNameOptions.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </Select>
-          <Select value={supervisorNameFilter} onChange={(e) => setSupervisorNameFilter(e.target.value)}>
-            <option value="">{t('pages.trips.filters.allSupervisors', 'All Supervisors')}</option>
-            {supervisorNameOptions.map((n) => (
-              <option key={n} value={n}>{n}</option>
-            ))}
-          </Select>
-        </div>
-      </Card>
+      <div className="border-b flex gap-3">
+        <button
+          className={`px-3 py-2 text-sm ${tab === 'all' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-600'}`}
+          onClick={() => setTab('all')}
+        >{t('pages.trips.tabs.all', 'All')}</button>
+        <button
+          className={`px-3 py-2 text-sm ${tab === 'completed' ? 'border-b-2 border-blue-600 font-semibold' : 'text-gray-600'}`}
+          onClick={() => setTab('completed')}
+        >{t('pages.trips.tabs.completed', 'Completed')}</button>
+      </div>
+
+      {tab === 'all' && (
+        <Card className="p-4 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Select value={dateFilter} onChange={(e) => setDateFilter(e.target.value)}>
+              <option value="">{t('pages.trips.filters.allDates', 'All Dates')}</option>
+              {dateOptions.map((d) => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </Select>
+            <Select value={busNumberFilter} onChange={(e) => setBusNumberFilter(e.target.value)}>
+              <option value="">{t('pages.trips.filters.allBuses', 'All Buses')}</option>
+              {busNumberOptions.map((b) => (
+                <option key={b} value={b}>{b}</option>
+              ))}
+            </Select>
+            <Select value={driverNameFilter} onChange={(e) => setDriverNameFilter(e.target.value)}>
+              <option value="">{t('pages.trips.filters.allDrivers', 'All Drivers')}</option>
+              {driverNameOptions.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </Select>
+            <Select value={supervisorNameFilter} onChange={(e) => setSupervisorNameFilter(e.target.value)}>
+              <option value="">{t('pages.trips.filters.allSupervisors', 'All Supervisors')}</option>
+              {supervisorNameOptions.map((n) => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </Select>
+          </div>
+        </Card>
+      )}
 
       {loading ? (
         <Card className="p-6">{t('common.loading', 'Loading...')}</Card>
@@ -183,9 +213,17 @@ export default function TripsPage() {
                       })()}
                     </td>
                     <td className="p-3 flex gap-2">
-                      <Link href={`/trips/${trip.id}`}><Button variant="secondary" size="sm">{t('pages.trips.actions.view', 'View')}</Button></Link>
-                      <Link href={`/trips/edit/${trip.id}`}><Button variant="outline" size="sm">{t('pages.trips.actions.edit', 'Edit')}</Button></Link>
-                      <Button variant="destructive" size="sm" onClick={() => onDelete(trip.id)}>{t('pages.trips.actions.delete', 'Delete')}</Button>
+                      {derived === 'completed' ? (
+                        <Button size="sm" onClick={() => onRenew(trip.id)} disabled={renewingId === trip.id}>
+                          {renewingId === trip.id ? t('pages.trips.actions.rescheduling', 'Rescheduling...') : t('pages.trips.actions.reschedule', 'Reschedule')}
+                        </Button>
+                      ) : (
+                        <>
+                          <Link href={`/trips/${trip.id}`}><Button variant="secondary" size="sm">{t('pages.trips.actions.view', 'View')}</Button></Link>
+                          <Link href={`/trips/edit/${trip.id}`}><Button variant="outline" size="sm">{t('pages.trips.actions.edit', 'Edit')}</Button></Link>
+                          <Button variant="destructive" size="sm" onClick={() => onDelete(trip.id)}>{t('pages.trips.actions.delete', 'Delete')}</Button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 );})}

@@ -243,8 +243,8 @@ export default function DriverProfile() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return '/avatar-placeholder.svg';
-    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
+    if (!imagePath) return '/logo2.png';
+    if (imagePath.includes('example.com/default-profile.png')) return '/logo2.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -273,13 +273,15 @@ export default function DriverProfile() {
           fill
           sizes="80px"
           className="object-cover rounded-full"
+          onError={(e) => {
+            const img = e.target as HTMLImageElement;
+            img.src = '/logo2.png';
+          }}
         />
       );
     }
     return (
-      <div className="w-full h-full bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-        <Car className="w-12 h-12 text-white" />
-      </div>
+      <Image src="/logo2.png" alt="Profile" fill unoptimized className="object-cover rounded-full" />
     );
   };
 

@@ -846,12 +846,44 @@ export default function StudentSubscriptionPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-gray-700">{t('pages.student.subscription.accountName', 'Account Name')}:</span>
                     <span className="font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">
-                      أبوالعلا علي أبوالعلا
+                      شركه الريناد للتوريدات والنقل
                     </span>
                   </div>
                 </div>
                 <div className="bg-amber-50 border border-amber-200 p-2 rounded text-xs text-amber-800">
                   <p className="font-medium">{t('pages.student.subscription.transfer', '⚠️ Transfer')} {formatCurrency(lang, selectedPlan?.price)}</p>
+                </div>
+
+                {/* InstaPay instructions (localized) */}
+                <div className="mt-3 bg-white p-3 rounded border border-blue-200 space-y-2">
+                  <p
+                    className={`text-sm text-gray-800 ${lang === 'ar' ? 'text-right' : 'text-left'}`}
+                    dir={lang === 'ar' ? 'rtl' : 'ltr'}
+                  >
+                    {lang === 'en'
+                      ? 'Please attach a screenshot of the transfer to one of the following numbers:'
+                      : 'برجاء ارفاق صوره من التحويل علي احد الارقام الاتيه:'}
+                  </p>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded">01005015215</span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText('01005015215')}
+                      className="text-blue-600 hover:text-blue-800"
+                      title={t('pages.student.subscription.copy', 'Copy')}
+                    >
+                      📋
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded">01030019746</span>
+                    <button
+                      onClick={() => navigator.clipboard.writeText('01030019746')}
+                      className="text-blue-600 hover:text-blue-800"
+                      title={t('pages.student.subscription.copy', 'Copy')}
+                    >
+                      📋
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -882,6 +914,20 @@ export default function StudentSubscriptionPage() {
                   {t('pages.student.subscription.refRequired', 'Reference code is required for InstaPay transactions')}
                 </p>
               )}
+            </div>
+          )}
+
+          {/* Offline payment instructions */}
+          {paymentMethod === PaymentMethod.Offline && (
+            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+              <p
+                className={`text-sm text-amber-800 ${lang === 'ar' ? 'text-right' : 'text-left'}`}
+                dir={lang === 'ar' ? 'rtl' : 'ltr'}
+              >
+                {lang === 'en'
+                  ? 'Please visit the office to pay and activate your account.'
+                  : 'برجاء الذهاب للمقر للدفع وتفعيل حسابك'}
+              </p>
             </div>
           )}
 

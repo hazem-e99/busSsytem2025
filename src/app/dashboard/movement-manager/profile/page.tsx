@@ -232,8 +232,8 @@ export default function MovementManagerProfilePage() {
 
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string => {
-    if (!imagePath) return '/avatar-placeholder.svg';
-    if (imagePath.includes('example.com/default-profile.png')) return 'https://api.el-renad.com/default-profile.png';
+    if (!imagePath) return '/logo2.png';
+    if (imagePath.includes('example.com/default-profile.png')) return '/logo2.png';
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
@@ -268,9 +268,7 @@ export default function MovementManagerProfilePage() {
       );
     }
     return (
-      <div className="w-full h-full bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 rounded-full flex items-center justify-center">
-        <Navigation className="w-12 h-12 text-white" />
-      </div>
+      <Image src="/logo2.png" alt="Profile" fill unoptimized className="object-cover rounded-full" />
     );
   };
 

@@ -140,6 +140,21 @@ export const tripService = {
     const list = resp?.data ?? resp ?? [];
     return Array.isArray(list) ? list : [];
   },
+
+  // Completed trips
+  async getCompleted(): Promise<TripResponse[]> {
+    const resp = await api.get<{ data: TripResponse[] }>(`/Trip/completed`);
+    const list = resp?.data ?? resp ?? [];
+    return Array.isArray(list) ? list : [];
+  },
+
+  // Renew a completed trip
+  async renew(id: number | string): Promise<TripResponse> {
+    // api.post requires (endpoint, body [, options]); send empty object body
+    const resp = await api.post<{ data: TripResponse }>(`/Trip/renew/${id}`, {});
+    const item = (resp?.data ?? resp) as TripResponse;
+    return item;
+  },
 };
 
 export default tripService;

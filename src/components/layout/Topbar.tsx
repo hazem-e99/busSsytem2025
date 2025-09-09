@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Bell, LogOut, ChevronDown, Clock, CheckCircle, AlertCircle, Info } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { notificationAPI, settingsAPI, userAPI } from '@/lib/api';
@@ -30,6 +30,10 @@ export const Topbar = () => {
   const [userProfile, setUserProfile] = useState<unknown>(null);
   const [notifFilter, setNotifFilter] = useState<'all' | 'unread'>('all');
   const { t } = useI18n();
+  const notifRef = useRef<HTMLDivElement | null>(null);
+  const userMenuRef = useRef<HTMLDivElement | null>(null);
+  const [avatarSrc, setAvatarSrc] = useState<string>('/logo2.png');
+  // Note: Always render stable markup on SSR and CSR to avoid hydration issues
 
   // Fetch system settings (logo and name)
   useEffect(() => {
@@ -96,6 +100,8 @@ export const Topbar = () => {
           };
           
           setUserProfile(userProfile);
+          const computed = getUserAvatarFrom(profileData, user);
+          setAvatarSrc(computed || '/logo2.png');
           console.log('👤 User profile loaded from /Users/profile:', userProfile);
           console.log('🖼️ Avatar URL:', userProfile.avatar);
         }
@@ -109,6 +115,7 @@ export const Topbar = () => {
           role: user.role,
           avatar: null
         });
+        setAvatarSrc('/logo2.png');
       }
     };
 
@@ -188,6 +195,21 @@ export const Topbar = () => {
     // Redirect directly to login page
     window.location.href = '/auth/login';
   };
+
+  // Close popups when clicking anywhere outside
+  useEffect(() => {
+    const handleDocumentClick = (event: MouseEvent) => {
+      const target = event.target as Node | null;
+      if (showNotifications && notifRef.current && target && !notifRef.current.contains(target)) {
+        setShowNotifications(false);
+      }
+      if (showUserMenu && userMenuRef.current && target && !userMenuRef.current.contains(target)) {
+        setShowUserMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => document.removeEventListener('mousedown', handleDocumentClick);
+  }, [showNotifications, showUserMenu]);
 
   const handleNotificationClick = async (notification: Notification) => {
     if (!user) return;
@@ -329,7 +351,22 @@ export const Topbar = () => {
     }
   };
 
-  // Get user avatar - use profile avatar if available, otherwise fallback to initial
+  // Build avatar URL from profile/user safely
+  const getUserAvatarFrom = (profileData: any, fallbackUser: any): string | null => {
+    const avatarCandidate = profileData?.profilePictureUrl || profileData?.avatar || (fallbackUser as any)?.avatar;
+    if (avatarCandidate) {
+      const avatarUrl = String(avatarCandidate);
+      if (avatarUrl.startsWith('data:image')) return avatarUrl;
+      if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) return avatarUrl;
+      if (avatarUrl.startsWith('/')) {
+        return avatarUrl.startsWith('/uploads') ? `https://api.el-renad.com${avatarUrl}` : `https://api.el-renad.com/api${avatarUrl}`;
+      }
+      return `https://api.el-renad.com/uploads/${avatarUrl}`;
+    }
+    return null;
+  };
+
+  // Legacy helper (kept for other uses if any)
   const getUserAvatar = () => {
     if ((userProfile as any)?.avatar) {
       const avatarUrl = (userProfile as any).avatar;
@@ -392,19 +429,13 @@ export const Topbar = () => {
         <div className="flex items-center space-x-6 ml-0 lg:ml-4">
           <div className="flex items-center space-x-4 group cursor-pointer hover:bg-gray-50/80 p-3 rounded-2xl transition-all duration-300">
             <div className="w-14 h-14 lg:w-16 lg:h-16 flex items-center justify-center overflow-hidden transition-all duration-300 relative">
-              {systemLogo ? (
-                <Image 
-                  src={systemLogo || '/logo2.png'} 
-                  alt="System Logo" 
-                  fill
-                  className="object-contain group-hover:scale-110 transition-transform duration-300"
-                  sizes="(max-width: 768px) 56px, 64px"
-                />
-              ) : (
-                <div className="w-14 h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center group-hover:from-blue-600 group-hover:to-purple-700 transition-all duration-300 shadow-lg">
-                  <span className="text-xl lg:text-2xl font-bold text-white">B</span>
-                </div>
-              )}
+              <Image 
+                src={systemLogo || '/logo2.png'} 
+                alt="System Logo" 
+                fill
+                className="object-contain group-hover:scale-110 transition-transform duration-300"
+                sizes="(max-width: 768px) 56px, 64px"
+              />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg lg:text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
@@ -421,7 +452,7 @@ export const Topbar = () => {
         <div className="flex items-center space-x-3">
           
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-xl transition-all duration-300 group"
@@ -561,7 +592,7 @@ export const Topbar = () => {
           </div>
 
           {/* User menu */}
-          <div className="relative flex items-center gap-2">
+          <div className="relative flex items-center gap-2" ref={userMenuRef}>
             {/* Language Toggle */}
             <LanguageSwitcher className="px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 text-sm" />
 
@@ -570,19 +601,14 @@ export const Topbar = () => {
               className="flex items-center space-x-3 p-3 text-gray-500 hover:text-gray-700 hover:bg-gray-100/80 rounded-xl transition-all duration-300 group"
             >
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden group-hover:shadow-xl transition-all duration-300 relative">
-                {getUserAvatar() ? (
-                  <Image 
-                    src={getUserAvatar() as string} 
-                    alt="Profile" 
-                    fill
-                    className="object-cover"
-                    sizes="40px"
-                  />
-                ) : (
-                  <span className="text-sm font-bold text-white">
-                    {getUserDisplayName().charAt(0).toUpperCase()}
-                  </span>
-                )}
+                <Image 
+                  src={avatarSrc || '/logo2.png'} 
+                  alt="Profile" 
+                  fill
+                  className="object-cover"
+                  sizes="40px"
+                  onError={() => setAvatarSrc('/logo2.png')}
+                />
               </div>
               <div className="hidden md:block text-left">
                 <p className="text-sm font-semibold text-gray-900">
@@ -600,19 +626,14 @@ export const Topbar = () => {
                   <div className="px-4 py-4 border-b border-gray-200/50 bg-gradient-to-r from-gray-50/80 to-white/80">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden relative">
-                        {getUserAvatar() ? (
-                          <Image 
-                            src={getUserAvatar() as string} 
-                            alt="Profile" 
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                          />
-                        ) : (
-                          <span className="text-sm font-bold text-white">
-                            {getUserDisplayName().charAt(0).toUpperCase()}
-                          </span>
-                        )}
+                        <Image 
+                          src={avatarSrc || '/logo2.png'} 
+                          alt="Profile" 
+                          fill
+                          className="object-cover"
+                          sizes="48px"
+                          onError={() => setAvatarSrc('/logo2.png')}
+                        />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-gray-900">{getUserDisplayName()}</p>
