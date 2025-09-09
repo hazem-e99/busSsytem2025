@@ -85,6 +85,7 @@ export default function UsersPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { showToast } = useToast();
+  const [avatarUrlMap, setAvatarUrlMap] = useState<Record<string, string>>({});
   
   // Build image URL helper
   const buildImageUrl = (imagePath: string | undefined): string | undefined => {
@@ -195,6 +196,21 @@ export default function UsersPage() {
     };
     fetchUsers();
   }, [roleFilter, showToast]);
+
+  // Build proxied URLs for avatars to avoid 404s and always have fallback
+  useEffect(() => {
+    const map: Record<string, string> = {};
+    const avatars = Array.from(new Set(
+      (users || [])
+        .map(u => (u as any).avatar || (u as any).profilePictureUrl)
+        .map(p => buildImageUrl(p as string | undefined))
+        .filter(Boolean) as string[]
+    ));
+    for (const u of avatars) {
+      map[u] = u.startsWith('http') ? `/api/image-proxy?url=${encodeURIComponent(u)}` : (u || '/logo2.png');
+    }
+    setAvatarUrlMap(map);
+  }, [users]);
 
   // Remove legacy db.json-driven dynamic forms/options
   useEffect(() => {
@@ -634,7 +650,7 @@ export default function UsersPage() {
                     <div className="w-10 h-10 rounded-full ring-1 ring-black/5 bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center overflow-hidden shadow-sm">
                       {row.original.avatar ? (
                         <Image 
-                          src={buildImageUrl(row.original.avatar) || row.original.avatar} 
+                          src={avatarUrlMap[buildImageUrl(row.original.avatar) || row.original.avatar] || '/logo2.png'} 
                           alt={row.original.name} 
                           width={40} 
                           height={40} 

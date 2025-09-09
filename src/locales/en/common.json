@@ -337,6 +337,7 @@
     "trips": {
       "title": "Trips",
       "newTrip": "New Trip",
+      "autoRenew": "Auto reschedule completed trips",
       "filters": {
         "allDates": "All Dates",
         "allBuses": "All Buses",

@@ -100,8 +100,15 @@ export const Topbar = () => {
           };
           
           setUserProfile(userProfile);
-          const computed = getUserAvatarFrom(profileData, user);
-          setAvatarSrc(computed || '/logo2.png');
+          let computed = getUserAvatarFrom(profileData, user);
+          // Normalize known default filenames returned by backend
+          if (computed && /default-profile\.(png|jpg|jpeg)$/i.test(computed)) {
+            computed = '/logo2.png';
+          }
+          const proxied = computed && computed.startsWith('http')
+            ? `/api/image-proxy?url=${encodeURIComponent(computed)}`
+            : (computed || '/logo2.png');
+          setAvatarSrc(proxied);
           console.log('👤 User profile loaded from /Users/profile:', userProfile);
           console.log('🖼️ Avatar URL:', userProfile.avatar);
         }
