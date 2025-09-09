@@ -5,7 +5,7 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const userCookie = request.cookies.get('user');
 
-  // Public routes that don't require authentication
+  // Public routes that don't require authentication (prefix match)
   const publicRoutes = [
     '/auth/login',
     '/auth/register',
@@ -16,7 +16,8 @@ export function middleware(request: NextRequest) {
     '/auth/reset-password-verification',
   ];
 
-  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+  const isRootPublic = pathname === '/';
+  const isPublicRoute = isRootPublic || publicRoutes.some(route => pathname.startsWith(route));
   
   // Handle dashboard routing
   if (pathname === '/dashboard') {
