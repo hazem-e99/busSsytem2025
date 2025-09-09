@@ -28,6 +28,8 @@ export default function TripsPage() {
   const [, force] = useReducer((x: number) => x + 1, 0);
   const [now, setNow] = useState<Date | null>(null);
   const [renewingId, setRenewingId] = useState<number | null>(null);
+  const [autoRenewedIds, setAutoRenewedIds] = useState<Set<number>>(new Set());
+  const [autoRenewEnabled, setAutoRenewEnabled] = useState<boolean>(false);
 
   const fetchTrips = async () => {
     try {
@@ -57,6 +59,11 @@ export default function TripsPage() {
 
   // establish stable now after mount and periodically update
   useEffect(() => {
+    // Load auto-renew preference
+    try {
+      const saved = typeof window !== 'undefined' ? window.localStorage.getItem('autoRenewTrips') : null;
+      if (saved != null) setAutoRenewEnabled(saved === 'true');
+    } catch {}
     setNow(new Date());
     const id = setInterval(() => {
       setNow(new Date());
@@ -64,6 +71,34 @@ export default function TripsPage() {
     }, getRefreshIntervalMs());
     return () => clearInterval(id);
   }, []);
+
+  // Auto-reschedule trips that have completed status (run once per trip per session)
+  useEffect(() => {
+    if (!autoRenewEnabled) return;
+    if (!now || renewingId) return;
+    const candidates = trips.filter((trip) => {
+      const derived = deriveTripStatus({
+        tripDate: trip.tripDate as unknown as string,
+        departureTimeOnly: trip.departureTimeOnly as unknown as string,
+        arrivalTimeOnly: trip.arrivalTimeOnly as unknown as string,
+        status: trip.status as unknown as string
+      }, now);
+      return derived === 'completed' && !autoRenewedIds.has(Number(trip.id));
+    });
+    if (candidates.length === 0) return;
+
+    const nextTrip = candidates[0];
+    const idNum = Number(nextTrip.id);
+    setAutoRenewedIds(prev => new Set(prev).add(idNum));
+    onRenew(idNum).catch(() => {
+      // If failed, allow retry in a future tick by removing from set
+      setAutoRenewedIds(prev => {
+        const copy = new Set(prev);
+        copy.delete(idNum);
+        return copy;
+      });
+    });
+  }, [now, trips, renewingId, autoRenewedIds, autoRenewEnabled]);
 
   // Apply client-side filters reactively
   useEffect(() => {
@@ -118,6 +153,18 @@ export default function TripsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-semibold">{t('pages.trips.title', 'Trips')}</h1>
         <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={autoRenewEnabled}
+              onChange={(e) => {
+                const v = e.target.checked;
+                setAutoRenewEnabled(v);
+                try { window.localStorage.setItem('autoRenewTrips', String(v)); } catch {}
+              }}
+            />
+            {t('pages.trips.autoRenew', 'Auto reschedule completed trips')}
+          </label>
           <Badge>عدد الرحلات: {trips.length}</Badge>
           <Link href="/trips/create"><Button>{t('pages.trips.newTrip', 'New Trip')}</Button></Link>
         </div>
