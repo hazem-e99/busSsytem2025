@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Modal } from '@/components/ui/Modal';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import Image from 'next/image';
+import busTwo from '@/../public/bus_two.png';
 import { 
   Bus, 
   Search, 
@@ -342,84 +344,54 @@ export default function MovementManagerBusesPage() {
           <CardDescription>{t('pages.movementManager.buses.fleetSubtitle', 'Manage bus assignments and status')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('pages.movementManager.buses.table.bus', 'Bus')}</TableHead>
-                <TableHead>{t('pages.movementManager.buses.table.status', 'Status')}</TableHead>
-                <TableHead>{t('pages.movementManager.buses.table.capacity', 'Capacity')}</TableHead>
-                <TableHead>{t('pages.movementManager.buses.table.speed', 'Speed')}</TableHead>
-                <TableHead>{t('pages.movementManager.buses.table.actions', 'Actions')}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          {filteredBuses.length === 0 ? (
+            <div className="text-center py-8">
+              <Bus className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600">{t('pages.movementManager.buses.noBuses', 'No buses found')}</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredBuses.map((bus, index) => (
-                <TableRow key={getUniqueKey(bus, index)}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Bus className="w-5 h-5 text-blue-600" />
-                      </div>
+                <div key={getUniqueKey(bus, index)} className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden bg-white">
+                  <div className="relative h-36 w-full">
+                    <Image src={busTwo} alt="Bus image" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" style={{objectFit:'cover'}} />
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{t('pages.movementManager.buses.table.bus', 'Bus')} {bus.busNumber}</p>
-                        <p className="text-sm text-gray-500">{t('pages.movementManager.buses.table.id', 'ID')}: {bus.id}</p>
+                        <div className="text-sm text-gray-500">{t('pages.movementManager.buses.table.id', 'ID')}: <span className="font-medium text-gray-700">{bus.id}</span></div>
+                        <div className="text-lg font-semibold text-gray-900">{t('pages.movementManager.buses.table.bus', 'Bus')} {bus.busNumber}</div>
+                      </div>
+                      <Badge variant={bus.status === 'Active' ? 'default' : 'secondary'}>
+                        {t(`pages.movementManager.buses.status.${bus.status}`, bus.status)}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="p-2 rounded-md bg-slate-50">
+                        <div className="text-gray-500">{t('pages.movementManager.buses.table.capacity', 'Capacity')}</div>
+                        <div className="font-medium">{bus.capacity} {t('pages.movementManager.buses.table.seatsLabel', 'seats')}</div>
+                      </div>
+                      <div className="p-2 rounded-md bg-slate-50">
+                        <div className="text-gray-500">{t('pages.movementManager.buses.table.speed', 'Speed')}</div>
+                        <div className="font-medium">{bus.speed} {t('pages.movementManager.buses.table.kmh', 'km/h')}</div>
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={
-                        bus.status === 'Active' ? 'default' : 'secondary'
-                      }
-                    >
-                      {t(`pages.movementManager.buses.status.${bus.status}`, bus.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="font-medium">{bus.capacity} {t('pages.movementManager.buses.table.seatsLabel', 'seats')}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">
-                      <p className="font-medium">{bus.speed} {t('pages.movementManager.buses.table.kmh', 'km/h')}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedBus(bus);
-                          setShowViewModal(true);
-                        }}
-                      >
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedBus(bus); setShowViewModal(true); }}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedBus(bus);
-                          setShowEditModal(true);
-                        }}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedBus(bus); setShowEditModal(true); }}>
                         <Edit className="w-4 h-4" />
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteBus(bus.id)}
-                      >
+                      <Button size="sm" variant="outline" onClick={() => handleDeleteBus(bus.id)}>
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
 

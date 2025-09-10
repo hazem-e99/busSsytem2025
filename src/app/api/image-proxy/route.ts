@@ -1,67 +1,42 @@
-import { NextResponse } from 'next/server'
-import path from 'path'
-import { readFile } from 'fs/promises'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET(request: Request) {
+// Simple image proxy to reliably serve remote avatars through the same origin
+// Usage: /api/image-proxy?url=https%3A%2F%2Fhost%2Fpath.jpg
+export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const url = searchParams.get('url') || ''
-
-    // If no URL, serve default
-    if (!url) {
-      const file = await readDefault()
-      const ab = toArrayBuffer(file)
-      return new NextResponse(ab, { headers: { 'Content-Type': 'image/png' } })
+    const { searchParams } = new URL(req.url)
+    const target = searchParams.get('url')
+    if (!target) {
+      return NextResponse.redirect(new URL('/logo2.png', req.url))
     }
 
-    // If it's a data URL or local asset, just redirect to it
-    if (url.startsWith('data:image')) {
-      return NextResponse.redirect(url)
-    }
-    if (url.startsWith('/')) {
-      return NextResponse.redirect(url)
+    // Prevent SSRF to localhost
+    const decoded = decodeURIComponent(target)
+    if (/^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0)(:\d+)?/i.test(decoded)) {
+      return NextResponse.redirect(new URL('/logo2.png', req.url))
     }
 
-    // Fetch remote image; if not ok, fall back to default
-    try {
-      const res = await fetch(url, { method: 'GET' })
-      if (res.ok && res.body) {
-        const headers = new Headers(res.headers)
-        headers.set('Cache-Control', 'public, max-age=3600')
-        return new NextResponse(res.body as unknown as ReadableStream, { headers })
-      }
-    } catch {}
+    const resp = await fetch(decoded, {
+      // Avoid caching broken responses for long
+      cache: 'no-store',
+    })
 
-    const file = await readDefault()
-    const ab = toArrayBuffer(file)
-    return new NextResponse(ab, { headers: { 'Content-Type': 'image/png', 'Cache-Control': 'public, max-age=3600' } })
+    if (!resp.ok) {
+      return NextResponse.redirect(new URL('/logo2.png', req.url))
+    }
+
+    // Copy content type and stream body
+    const contentType = resp.headers.get('content-type') || 'image/jpeg'
+    const arrayBuffer = await resp.arrayBuffer()
+    return new NextResponse(arrayBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        // Short cache to reduce refetching while allowing updates
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=3600',
+      },
+    })
   } catch {
-    const file = await readDefault()
-    const ab = toArrayBuffer(file)
-    return new NextResponse(ab, { headers: { 'Content-Type': 'image/png' } })
+    return NextResponse.redirect(new URL('/logo2.png', req.url))
   }
 }
-
-async function readDefault(): Promise<Uint8Array> {
-  const filePath = path.join(process.cwd(), 'public', 'logo2.png')
-  try {
-    const buf = await readFile(filePath)
-    return new Uint8Array(buf)
-  } catch {
-    // In case asset missing, return 1x1 png
-    const onePx = Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAk8B5s3kq/MAAAAASUVORK5CYII=',
-      'base64'
-    )
-    return new Uint8Array(onePx)
-  }
-}
-
-function toArrayBuffer(u8: Uint8Array): ArrayBuffer {
-  // Create a detached ArrayBuffer with the same bytes to satisfy TS/runtime
-  const copy = new Uint8Array(u8.byteLength)
-  copy.set(u8)
-  return copy.buffer
-}
-
-

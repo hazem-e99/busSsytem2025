@@ -237,19 +237,19 @@ export default function MovementManagerProfilePage() {
     
     // If it's already a full URL, return as is
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-      return imagePath;
+      return `/api/image-proxy?url=${encodeURIComponent(imagePath)}`;
     }
     
     // If it's a relative path, make it absolute
     if (imagePath.startsWith('/')) {
       if (imagePath.startsWith('/uploads')) {
-        return `https://api.el-renad.com${imagePath}`;
+        return `/api/image-proxy?url=${encodeURIComponent(`https://api.el-renad.com${imagePath}`)}`;
       }
-      return `https://api.el-renad.com/api${imagePath}`;
+      return `/api/image-proxy?url=${encodeURIComponent(`https://api.el-renad.com/api${imagePath}`)}`;
     }
     
     // If it's just a filename, assume it's in uploads folder
-    return `https://api.el-renad.com/uploads/${imagePath}`;
+    return `/api/image-proxy?url=${encodeURIComponent(`https://api.el-renad.com/uploads/${imagePath}`)}`;
   };
 
   // Get avatar display

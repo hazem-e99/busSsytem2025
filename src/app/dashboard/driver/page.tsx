@@ -28,7 +28,7 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { formatDate } from '@/utils/formatDate';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Trip {
@@ -82,15 +82,19 @@ interface Bus {
 export default function DriverDashboard() {
   const { user } = useAuth();
   const router = useRouter();
+  const [redirected, setRedirected] = useState(false);
+  const didRedirectRef = useRef(false);
   const [isEndingTrip, setIsEndingTrip] = useState(false);
   const [tripEnded, setTripEnded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { showToast } = useToast();
 
-  // Redirect to My Trips page on component mount
+  // Redirect to My Trips page on component mount and avoid triggering data fetch here
   useEffect(() => {
+    didRedirectRef.current = true; // synchronous guard for same-tick effects
     router.push('/dashboard/driver/my-trips');
+    setRedirected(true);
   }, [router]);
 
   // Real data from API
@@ -103,18 +107,18 @@ export default function DriverDashboard() {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
 
-  // Function to refresh all data from db.json via API
+  // Function to refresh all data via API
   const refreshData = async () => {
-    if (!user) return;
+    if (!user || redirected || didRedirectRef.current) return;
     
     try {
       setIsLoading(true);
       
-      console.log('🔄 Starting data refresh from db.json...');
+      console.log('🔄 Starting driver data refresh...');
       
-      // 1. Fetch all trips from db.json and filter by driver ID
+      // 1. Fetch all trips and filter by driver ID
       const allTrips = await tripAPI.getAll();
-      console.log('📊 Fetched trips from db.json:', allTrips.length);
+      console.log('📊 Fetched trips:', allTrips.length);
       
       // Transform Trip data for this component to match new schema
       const driverTripsData = allTrips
@@ -152,9 +156,9 @@ export default function DriverDashboard() {
       console.log('🚌 Active trip found:', activeTripData ? 'Yes' : 'No');
       setActiveTrip(activeTripData);
       
-      // 4. Fetch all buses from db.json and find assigned bus
+      // 4. Fetch all buses and find assigned bus
       const allBusesResponse = await busAPI.getAll();
-      console.log('🚐 Fetched buses from db.json:', allBusesResponse.data.length);
+      console.log('🚐 Fetched buses:', allBusesResponse.data.length);
       setBuses(allBusesResponse.data);
       
       // Note: New API doesn't support driver filtering, so we'll need to handle this differently
@@ -168,7 +172,7 @@ export default function DriverDashboard() {
       // 6. Update last refresh timestamp
       setLastRefresh(new Date());
       
-      console.log('✅ Data refreshed successfully from db.json:', {
+      console.log('✅ Driver data refreshed successfully:', {
         trips: driverTripsData.length,
         todayTrips: todayTripsData.length,
         assignedBus: assignedBusData?.busNumber || 'None',
@@ -176,30 +180,33 @@ export default function DriverDashboard() {
       });
       
     } catch (error) {
-      console.error('❌ Failed to fetch driver data from db.json:', error);
-      showToast({
-        type: 'error',
-        title: 'Database Connection Error!',
-        message: 'Failed to load data from db.json. Please check your connection and refresh.'
-      });
+      console.error('❌ Failed to fetch driver data:', error);
+      // Suppress toast if this page is just redirecting
+      if (!didRedirectRef.current) {
+        showToast({
+          type: 'error',
+          title: 'خطأ في الاتصال بالخادم',
+          message: 'فشل تحميل بيانات السائق. يرجى التحقق من الاتصال وإعادة المحاولة.'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch real data from API
+  // Fetch real data from API (skip when redirecting)
   useEffect(() => {
     refreshData();
-  }, [user]);
+  }, [user, redirected]);
 
-  // Auto-refresh data every 30 seconds
+  // Auto-refresh data every 30 seconds (skip when redirecting)
   useEffect(() => {
+    if (redirected) return;
     const interval = setInterval(() => {
       refreshData();
-    }, 30000); // 30 seconds
-
+    }, 30000);
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, redirected]);
 
   // Filter trips by selected date
   useEffect(() => {
@@ -369,10 +376,7 @@ export default function DriverDashboard() {
               <div>
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-blue-600 bg-clip-text text-transparent">Driver Dashboard</h1>
                 <p className="text-slate-600 mt-1">Manage your trips and view route information</p>
-                <p className="text-xs text-slate-500 mt-1">Last updated: {lastRefresh.toLocaleTimeString()} • Data from db.json</p>
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-xs text-blue-700 font-medium">📊 All data is live and connected to db.json database</p>
-                </div>
+                <p className="text-xs text-slate-500 mt-1">Last updated: {lastRefresh.toLocaleTimeString()}</p>
               </div>
             </div>
             <div className="hidden md:flex items-end gap-3">

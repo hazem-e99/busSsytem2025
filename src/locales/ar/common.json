@@ -724,20 +724,20 @@
           "fields": {
             "bus": "الحافلة",
             "driver": "السائق",
-            "conductor": "الكمساري",
+            "conductor": "مسؤول الرحلة",
             "tripDate": "تاريخ الرحلة",
-            "departure": "المغادرة",
+            "departure": "الاقلاع",
             "arrival": "الوصول",
             "startLocation": "نقطة الانطلاق",
             "endLocation": "الوجهة",
             "stopAddress": "العنوان",
-            "stopArrival": "الوصول",
-            "stopDeparture": "المغادرة"
+            "stopArrival": "الوصول لنقطه الوقوف",
+            "stopDeparture": "الاقلاع من نقطة الوقوف"
           },
           "placeholders": {
             "selectBus": "اختر حافلة",
             "selectDriver": "اختر سائقًا",
-            "selectConductor": "اختر كمساريًا"
+            "selectConductor": "اختر مسؤول الرحله"
           },
           "actions": {
             "addStop": "إضافة توقف",
@@ -751,12 +751,12 @@
           "stats": {
             "busesLoaded": "عدد الحافلات",
             "drivers": "السائقون",
-            "conductors": "الكمسارية"
+            "conductors": "مسؤوليين الرحلات"
           },
           "errors": {
             "requiredBus": "الحافلة مطلوبة",
             "requiredDriver": "السائق مطلوب",
-            "requiredConductor": "الكمساري مطلوب",
+            "requiredConductor": "المسؤول المطلوب",
             "requiredStart": "نقطة الانطلاق مطلوبة",
             "requiredEnd": "الوجهة مطلوبة",
             "requiredDate": "تاريخ الرحلة مطلوب",
@@ -767,8 +767,8 @@
             "requiredAddress": "العنوان مطلوب",
             "invalidBus": "الحافلة المحددة غير صالحة",
             "invalidDriver": "السائق المحدد غير صالح",
-            "invalidConductor": "الكمساري المحدد غير صالح",
-            "sameDriverConductor": "يجب أن يكون السائق والكمساري مستخدمين مختلفين"
+            "invalidConductor": "المسؤول المحدد غير صالح",
+            "sameDriverConductor": "يجب أن يكون السائق المسؤول مستخدمين مختلفين"
           }
         },
         "toasts": {
@@ -787,7 +787,7 @@
         "activeUsers": "المستخدمون النشطون",
         "students": "الطلاب",
         "drivers": "السائقون",
-        "conductors": "الكمسارية",
+        "conductors": "المسؤوليين",
         "searchPlaceholder": "ابحث عن المستخدمين بالاسم أو البريد...",
         "allRoles": "كل الأدوار",
         "usersList": "قائمة المستخدمين",
@@ -798,12 +798,62 @@
         "status": "الحالة",
         "contact": "التواصل",
         "created": "تاريخ الإنشاء",
-        "actions": "الإجراءات"
+        "actions": "الإجراءات",
+        "addForm": {
+          "title": "إضافة مستخدم جديد",
+          "sections": {
+            "basicInfo": "المعلومات الأساسية",
+            "roleContact": "الدور ووسائل التواصل",
+            "accountStatus": "حالة الحساب",
+            "additional": "تفاصيل إضافية"
+          },
+          "fields": {
+            "firstName": "الاسم الأول",
+            "lastName": "اسم العائلة",
+            "email": "البريد الإلكتروني",
+            "nationalId": "الرقم القومي",
+            "role": "الدور",
+            "phoneNumber": "رقم الهاتف",
+            "status": "الحالة"
+          },
+          "placeholders": {
+            "firstName": "مثال: أحمد",
+            "lastName": "مثال: محمد",
+            "email": "مثال: ahmed@example.com",
+            "nationalId": "مثال: 12345678901234",
+            "phoneNumber": "مثال: 01234567890",
+            "selectGeneric": "اختر"
+          },
+          "hints": {
+            "nameLength": "2-20 حرفًا، أحرف فقط.",
+            "emailValid": "صيغة بريد إلكتروني صحيحة مطلوبة.",
+            "nationalId": "14 رقمًا بالضبط.",
+            "selectRole": "اختر دور المستخدم في النظام.",
+            "phoneEg": "تنسيق الهاتف المصري: 01XXXXXXXXX",
+            "currentState": "حالة الحساب الحالية.",
+            "selectOption": "اختر من الخيارات المتاحة.",
+            "enterValue": "أدخل"
+          },
+          "roles": {
+            "admin": "مسؤول"
+          },
+          "status": {
+            "suspended": "موقوف"
+          },
+          "cta": {
+            "adding": "جارٍ الإضافة...",
+            "add": "إضافة مستخدم"
+          }
+        }
       }
     },
     "trips": {
       "title": "الرحلات",
       "newTrip": "رحلة جديدة",
+      "tabs": {
+        "all": "الكل",
+        "completed": "الرحلات المنتهية"
+      },
       "autoRenew": "إعادة جدولة الرحلات المكتملة تلقائياً",
       "filters": {
         "allDates": "كل التواريخ",
@@ -1037,7 +1087,7 @@
           "fields": {
             "bus": "الحافلة",
             "driver": "السائق",
-            "conductor": "الكمساري",
+            "conductor": "المسؤول",
             "origin": "نقطة الانطلاق",
             "destination": "الوجهة",
             "date": "التاريخ",
@@ -1160,7 +1210,7 @@
           "seatOccupancy": "إشغال المقاعد",
           "booked": "محجوز",
           "available": "متاح",
-          "conductor": "الكمساري",
+          "conductor": "المسؤول",
           "driver": "السائق",
           "unassigned": "غير مُعيّن",
           "trip": "رحلة",
@@ -1179,7 +1229,7 @@
           "tripId": "معرف الرحلة",
           "busId": "معرف الحافلة",
           "driverId": "معرف السائق",
-          "conductorId": "معرف الكمساري",
+          "conductorId": "معرف المسؤول",
           "stopLocations": "نقاط التوقف",
           "stops": "توقف",
           "noStops": "لا توجد نقاط توقف لهذه الرحلة."
@@ -1283,7 +1333,7 @@
           "seatOccupancy": "إشغال المقاعد",
           "booked": "محجوز",
           "available": "متاح",
-          "conductor": "الكمساري",
+          "conductor": "المسؤول",
           "driver": "السائق",
           "unassigned": "غير مُعيّن",
           "trip": "رحلة",
@@ -1302,7 +1352,7 @@
           "tripId": "معرف الرحلة",
           "busId": "معرف الحافلة",
           "driverId": "معرف السائق",
-          "conductorId": "معرف الكمساري",
+          "conductorId": "معرف المسؤول",
           "stopLocations": "نقاط التوقف",
           "stops": "توقف",
           "stopArrival": "الوصول",
@@ -1373,6 +1423,11 @@
       },
       "trips": {
         "title": "الرحلات",
+        "tabs": {
+          "all": "الكل",
+          "filters": "تصفية",
+          "completed": "الرحلات المنتهية"
+        },
         "filters": {
           "date": "التاريخ",
           "driver": "السائق",
@@ -1419,7 +1474,7 @@
           "destination": "الوجهة",
           "routeInformation": "معلومات المسار",
           "resources": "الموارد",
-          "conductor": "الكمساري",
+          "conductor": "المسؤول",
           "additional": "تفاصيل إضافية",
           "notes": "ملاحظات",
           "description": "الوصف"

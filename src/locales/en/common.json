@@ -828,7 +828,53 @@
         "status": "Status",
         "contact": "Contact",
         "created": "Created",
-        "actions": "Actions"
+        "actions": "Actions",
+        "addForm": {
+          "title": "Add New User",
+          "sections": {
+            "basicInfo": "Basic Information",
+            "roleContact": "Role & Contact",
+            "accountStatus": "Account Status",
+            "additional": "Additional Details"
+          },
+          "fields": {
+            "firstName": "First Name",
+            "lastName": "Last Name",
+            "email": "Email",
+            "nationalId": "National ID",
+            "role": "Role",
+            "phoneNumber": "Phone Number",
+            "status": "Status"
+          },
+          "placeholders": {
+            "firstName": "e.g. Ahmed",
+            "lastName": "e.g. Mohamed",
+            "email": "e.g. ahmed@example.com",
+            "nationalId": "e.g. 12345678901234",
+            "phoneNumber": "e.g. 01234567890",
+            "selectGeneric": "Select"
+          },
+          "hints": {
+            "nameLength": "2-20 characters, letters only.",
+            "emailValid": "Valid email format required.",
+            "nationalId": "Exactly 14 digits.",
+            "selectRole": "Select user's system role.",
+            "phoneEg": "Egyptian mobile format: 01XXXXXXXXX",
+            "currentState": "Current account state.",
+            "selectOption": "Select from available options.",
+            "enterValue": "Enter"
+          },
+          "roles": {
+            "admin": "Admin"
+          },
+          "status": {
+            "suspended": "Suspended"
+          },
+          "cta": {
+            "adding": "Adding...",
+            "add": "Add User"
+          }
+        }
       }
     },
     "student": {

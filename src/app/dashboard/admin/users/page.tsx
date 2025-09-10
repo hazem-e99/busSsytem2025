@@ -59,7 +59,7 @@ interface ErrorWithMessage {
 }
 
 export default function UsersPage() {
-  const { t } = useI18n();
+  const { t, isRTL } = useI18n();
   const { user } = useAuth();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
@@ -758,39 +758,41 @@ export default function UsersPage() {
       <Modal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        title="Add New User"
+        title={t('pages.admin.users.addForm.title', 'Add New User')}
         size="lg"
       >
         <form onSubmit={handleAddUser} className="space-y-4">
           {/* Basic Information */}
           <div className="rounded-xl border bg-sky-50/60 p-4 space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <UserPlus className="w-4 h-4 text-blue-600" /> Basic Information
+              <UserPlus className="w-4 h-4 text-blue-600" /> {t('pages.admin.users.addForm.sections.basicInfo', 'Basic Information')}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  First Name
+                <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                  {t('pages.admin.users.addForm.fields.firstName', 'First Name')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">2-20 characters, letters only.</p>
+                <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.nameLength', '2-20 characters, letters only.')}</p>
                 <Input
                   value={newUser.firstName}
                   onChange={(e) => setNewUser({ ...newUser, firstName: e.target.value })}
-                  placeholder="e.g. Ahmed"
+                  placeholder={t('pages.admin.users.addForm.placeholders.firstName', 'e.g. Ahmed')}
+                  className={isRTL ? 'text-right placeholder:text-right' : undefined}
                   required
                   minLength={2}
                   maxLength={20}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Last Name
+                <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                  {t('pages.admin.users.addForm.fields.lastName', 'Last Name')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">2-20 characters, letters only.</p>
+                <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.nameLength', '2-20 characters, letters only.')}</p>
                 <Input
                   value={newUser.lastName}
                   onChange={(e) => setNewUser({ ...newUser, lastName: e.target.value })}
-                  placeholder="e.g. Mohamed"
+                  placeholder={t('pages.admin.users.addForm.placeholders.lastName', 'e.g. Mohamed')}
+                  className={isRTL ? 'text-right placeholder:text-right' : undefined}
                   required
                   minLength={2}
                   maxLength={20}
@@ -800,35 +802,37 @@ export default function UsersPage() {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email
+                <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                  {t('pages.admin.users.addForm.fields.email', 'Email')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Valid email format required.</p>
+                <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.emailValid', 'Valid email format required.')}</p>
                 <Input
                   type="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  placeholder="e.g. ahmed@example.com"
+                  placeholder={t('pages.admin.users.addForm.placeholders.email', 'e.g. ahmed@example.com')}
+                  className={isRTL ? 'text-right placeholder:text-right' : undefined}
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  National ID
+                <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                  {t('pages.admin.users.addForm.fields.nationalId', 'National ID')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Exactly 14 digits.</p>
+                <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.nationalId', 'Exactly 14 digits.')}</p>
                 <Input
                   value={newUser.nationalId}
                   onChange={(e) => {
                     const digitsOnly = e.target.value.replace(/[^0-9]/g, '').slice(0, 14);
                     setNewUser({ ...newUser, nationalId: digitsOnly });
                   }}
-                  placeholder="e.g. 12345678901234"
+                  placeholder={t('pages.admin.users.addForm.placeholders.nationalId', 'e.g. 12345678901234')}
+                  className={isRTL ? 'text-right placeholder:text-right' : undefined}
                   required
                   pattern="^[0-9]{14}$"
                   maxLength={14}
                   inputMode="numeric"
-                  title="National ID must be exactly 14 digits"
+                  title={t('pages.admin.users.addForm.hints.nationalId', 'Exactly 14 digits.')}
                 />
               </div>
             </div>
@@ -837,34 +841,36 @@ export default function UsersPage() {
           {/* Role & Contact */}
           <div className="rounded-xl border bg-emerald-50/60 p-4 space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <Shield className="w-4 h-4 text-emerald-700" /> Role & Contact
+              <Shield className="w-4 h-4 text-emerald-700" /> {t('pages.admin.users.addForm.sections.roleContact', 'Role & Contact')}
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Role
+                <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                  {t('pages.admin.users.addForm.fields.role', 'Role')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Select user&apos;s system role.</p>
+                <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.selectRole', "Select user's system role.")}</p>
                 <Select
                   value={newUser.role}
                   onChange={(e) => setNewUser({ ...newUser, role: e.target.value as UserRole })}
+                  className={isRTL ? 'text-right' : undefined}
                   required
                 >
-                  <option value="driver">Driver</option>
-                  <option value="conductor">Conductor</option>
-                  <option value="movement-manager">Movement Manager</option>
-                  <option value="admin">Admin</option>
+                  <option value="driver">{t('roles.driver', 'Driver')}</option>
+                  <option value="conductor">{t('roles.supervisor', 'Conductor')}</option>
+                  <option value="movement-manager">{t('roles.movementManager', 'Movement Manager')}</option>
+                  <option value="admin">{t('pages.admin.users.addForm.roles.admin', 'Admin')}</option>
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number
+                <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                  {t('pages.admin.users.addForm.fields.phoneNumber', 'Phone Number')}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">Egyptian mobile format: 01XXXXXXXXX</p>
+                <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.phoneEg', 'Egyptian mobile format: 01XXXXXXXXX')}</p>
                 <Input
                   value={newUser.phoneNumber}
                   onChange={(e) => setNewUser({ ...newUser, phoneNumber: e.target.value })}
-                  placeholder="e.g. 01234567890"
+                  placeholder={t('pages.admin.users.addForm.placeholders.phoneNumber', 'e.g. 01234567890')}
+                  className={isRTL ? 'text-right placeholder:text-right' : undefined}
                   required
                   pattern="^01[0-2,5]{1}[0-9]{8}$"
                   inputMode="tel"
@@ -876,21 +882,22 @@ export default function UsersPage() {
           {/* Status */}
           <div className="rounded-xl border bg-purple-50/60 p-4 space-y-4">
             <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-              <Users className="w-4 h-4 text-purple-700" /> Account Status
+              <Users className="w-4 h-4 text-purple-700" /> {t('pages.admin.users.addForm.sections.accountStatus', 'Account Status')}
             </h4>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Status
+              <label className={`block text-sm font-medium text-gray-700 mb-1 ${isRTL ? 'text-right' : ''}`}>
+                {t('pages.admin.users.addForm.fields.status', 'Status')}
               </label>
-              <p className="text-xs text-gray-500 mb-2">Current account state.</p>
+              <p className={`text-xs text-gray-500 mb-2 ${isRTL ? 'text-right' : ''}`}>{t('pages.admin.users.addForm.hints.currentState', 'Current account state.')}</p>
               <Select
                 value={newUser.status}
                 onChange={(e) => setNewUser({ ...newUser, status: e.target.value as 'active' | 'inactive' | 'suspended' })}
+                className={isRTL ? 'text-right' : undefined}
                 required
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
+                <option value="active">{t('common.status.active', 'Active')}</option>
+                <option value="inactive">{t('common.status.inactive', 'Inactive')}</option>
+                <option value="suspended">{t('pages.admin.users.addForm.status.suspended', 'Suspended')}</option>
               </Select>
               <div className="mt-2">
                 <Badge
@@ -899,7 +906,7 @@ export default function UsersPage() {
                     newUser.status === 'inactive' ? 'secondary' : 'destructive'
                   }
                 >
-                  {newUser.status === 'active' ? 'Active' : newUser.status === 'inactive' ? 'Inactive' : 'Suspended'}
+                  {newUser.status === 'active' ? t('common.status.active', 'Active') : newUser.status === 'inactive' ? t('common.status.inactive', 'Inactive') : t('pages.admin.users.addForm.status.suspended', 'Suspended')}
                 </Badge>
               </div>
             </div>
@@ -909,7 +916,7 @@ export default function UsersPage() {
           {formsConfig && (
             <div className="rounded-xl border bg-amber-50/60 p-4 space-y-4">
               <h4 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                <Phone className="w-4 h-4 text-amber-700" /> Additional Details
+                <Phone className="w-4 h-4 text-amber-700" /> {t('pages.admin.users.addForm.sections.additional', 'Additional Details')}
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {formsConfig && (() => {
@@ -953,13 +960,13 @@ export default function UsersPage() {
                       return (
                         <div key={key}>
                           <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
-                          <p className="text-xs text-gray-500 mb-2">Select from available options.</p>
+                          <p className="text-xs text-gray-500 mb-2">{t('pages.admin.users.addForm.hints.selectOption', 'Select from available options.')}</p>
                           <Select
                             value={value}
                             onChange={(e) => setDynamicValues(prev => ({ ...prev, [key]: e.target.value }))}
                             required={!!field.required}
                           >
-                            <option value="">Select {field.label}</option>
+                            <option value="">{t('pages.admin.users.addForm.placeholders.selectGeneric', 'Select')} {field.label}</option>
                             {options.map(opt => (
                               <option key={opt.value} value={opt.value}>{opt.label}</option>
                             ))}
@@ -970,12 +977,12 @@ export default function UsersPage() {
                     return (
                       <div key={key}>
                         <label className="block text-sm font-medium text-gray-700 mb-1">{field.label}</label>
-                        <p className="text-xs text-gray-500 mb-2">Enter {field.label.toLowerCase()}.</p>
+                        <p className="text-xs text-gray-500 mb-2">{t('pages.admin.users.addForm.hints.enterValue', 'Enter')} {field.label.toLowerCase()}.</p>
                         <Input
                           type={field.type === 'email' ? 'email' : 'text'}
                           value={value}
                           onChange={(e) => setDynamicValues(prev => ({ ...prev, [key]: e.target.value }))}
-                          placeholder={`Enter ${field.label}`}
+                          placeholder={`${t('pages.admin.users.addForm.hints.enterValue', 'Enter')} ${field.label}`}
                           required={!!field.required}
                         />
                       </div>
@@ -997,10 +1004,10 @@ export default function UsersPage() {
               onClick={() => setShowAddModal(false)}
               disabled={isLoading}
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Adding...' : 'Add User'}
+              {isLoading ? t('pages.admin.users.addForm.cta.adding', 'Adding...') : t('pages.admin.users.addForm.cta.add', 'Add User')}
             </Button>
           </div>
         </form>

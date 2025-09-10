@@ -48,12 +48,12 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'S
     <div className="space-y-3">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative w-full sm:max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
             placeholder={searchPlaceholder}
             value={globalFilter ?? ''}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="pl-9"
+            className="ps-9"
           />
         </div>
       </div>
@@ -71,12 +71,12 @@ export function DataTable<TData, TValue>({ columns, data, searchPlaceholder = 'S
                         <Button
                           variant="ghost"
                           onClick={header.column.getToggleSortingHandler()}
-                          className="h-auto p-0 text-left font-semibold"
+                          className="h-auto p-0 text-start font-semibold"
                         >
                           {flexRender(header.column.columnDef.header, header.getContext())}
-                          {header.column.getIsSorted() === 'asc' && <ArrowUp className="inline h-4 w-4 ml-2" />}
-                          {header.column.getIsSorted() === 'desc' && <ArrowDown className="inline h-4 w-4 ml-2" />}
-                          {!header.column.getIsSorted() && <ChevronsUpDown className="inline h-4 w-4 ml-2 text-text-muted" />}
+                          {header.column.getIsSorted() === 'asc' && <ArrowUp className="inline h-4 w-4 ms-2" />}
+                          {header.column.getIsSorted() === 'desc' && <ArrowDown className="inline h-4 w-4 ms-2" />}
+                          {!header.column.getIsSorted() && <ChevronsUpDown className="inline h-4 w-4 ms-2 text-text-muted" />}
                         </Button>
                       )}
                     </TableHead>

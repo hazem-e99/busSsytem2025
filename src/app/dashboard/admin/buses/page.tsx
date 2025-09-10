@@ -24,8 +24,8 @@ import { Bus as BusType, BusRequest, BusListParams } from '@/types/bus';
 import { formatDate } from '@/utils/formatDate';
 import { useToast } from '@/components/ui/Toast';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
-import { DataTable } from '@/components/ui/DataTable';
-import { ColumnDef } from '@tanstack/react-table';
+import Image from 'next/image';
+import busTwo from '@/../public/bus_two.png';
 
 export default function BusesPage() {
   const { t } = useI18n();
@@ -570,7 +570,7 @@ export default function BusesPage() {
         </CardContent>
       </Card>
 
-      {/* Buses Table */}
+      {/* Buses Grid (Cards) */}
       <Card>
         <CardHeader>
           <CardTitle>{t('pages.admin.buses.fleet', 'Fleet')} ({buses.length} {t('pages.admin.buses.totalShort', 'total')}, {filteredBuses.length} {t('pages.admin.buses.filteredShort', 'filtered')})</CardTitle>
@@ -588,84 +588,48 @@ export default function BusesPage() {
               </Button>
             </div>
           ) : (
-            (() => {
-              const columns: ColumnDef<BusType>[] = [
-                {
-                  header: t('pages.admin.buses.table.bus', 'Bus'),
-                  accessorKey: 'busNumber',
-                  cell: ({ row }) => (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Bus className="w-5 h-5 text-blue-600" />
-                      </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {filteredBuses.map((bus) => (
+                <div key={bus.id} className="rounded-2xl border border-gray-100 shadow-sm overflow-hidden bg-white">
+                  <div className="relative h-36 w-full">
+                    <Image src={busTwo} alt="Bus image" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw" style={{objectFit:'cover'}} priority />
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900">{t('pages.admin.buses.table.bus', 'Bus')} {row.original.busNumber}</p>
-                        <p className="text-sm text-gray-500">{t('pages.admin.buses.table.id', 'ID')}: {row.original.id}</p>
+                        <div className="text-sm text-gray-500">{t('pages.admin.buses.table.id', 'ID')}: <span className="font-medium text-gray-700">{bus.id}</span></div>
+                        <div className="text-lg font-semibold text-gray-900">{t('pages.admin.buses.table.bus', 'Bus')} {bus.busNumber}</div>
+                      </div>
+                      <Badge variant={bus.status === 'Active' ? 'default' : bus.status === 'OutOfService' ? 'destructive' : 'secondary'}>
+                        {bus.status === 'UnderMaintenance' ? t('pages.admin.buses.status.UnderMaintenance', 'Under Maintenance') : bus.status === 'OutOfService' ? t('pages.admin.buses.status.OutOfService', 'Out of Service') : t(`pages.admin.buses.status.${bus.status}`, bus.status)}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div className="p-2 rounded-md bg-slate-50">
+                        <div className="text-gray-500">{t('pages.admin.buses.table.capacity', 'Capacity')}</div>
+                        <div className="font-medium">{bus.capacity} {t('pages.admin.buses.table.seatsLabel', 'seats')}</div>
+                      </div>
+                      <div className="p-2 rounded-md bg-slate-50">
+                        <div className="text-gray-500">{t('pages.admin.buses.table.speed', 'Speed')}</div>
+                        <div className="font-medium">{bus.speed} {t('pages.admin.buses.table.kmh', 'km/h')}</div>
                       </div>
                     </div>
-                  ),
-                },
-              {
-                header: t('pages.admin.buses.table.status', 'Status'),
-                accessorKey: 'status',
-                cell: ({ getValue }) => (
-                  (() => {
-                    const value = getValue<string>();
-                    const pretty = value === 'UnderMaintenance' ? t('pages.admin.buses.status.UnderMaintenance', 'Under Maintenance') : value === 'OutOfService' ? t('pages.admin.buses.status.OutOfService', 'Out of Service') : t(`pages.admin.buses.status.${value}`, value);
-                    const variant = value === 'Active' ? 'default' : value === 'UnderMaintenance' ? 'secondary' : value === 'Inactive' ? 'secondary' : 'destructive';
-                    return <Badge variant={variant}>{pretty}</Badge>;
-                  })()
-                ),
-              },
-              {
-                header: t('pages.admin.buses.table.capacity', 'Capacity'),
-                accessorKey: 'capacity',
-                cell: ({ getValue }) => <span className="font-medium">{getValue<number>()} {t('pages.admin.buses.table.seatsLabel', 'seats')}</span>,
-              },
-              {
-                header: t('pages.admin.buses.table.speed', 'Speed'),
-                accessorKey: 'speed',
-                cell: ({ getValue }) => <span className="font-medium">{getValue<number>()} {t('pages.admin.buses.table.kmh', 'km/h')}</span>,
-              },
-              {
-                header: t('pages.admin.buses.table.actions', 'Actions'),
-                id: 'actions',
-                cell: ({ row }) => (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedBus(row.original);
-                        setShowViewModal(true);
-                      }}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedBus(row.original);
-                        setShowEditModal(true);
-                      }}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setConfirmState({ open: true, busId: row.original.id, message: `${t('pages.admin.buses.confirmDeletePrefix', 'Delete bus')} ${row.original.busNumber}?` })}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedBus(bus); setShowViewModal(true); }}>
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => { setSelectedBus(bus); setShowEditModal(true); }}>
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setConfirmState({ open: true, busId: bus.id, message: `${t('pages.admin.buses.confirmDeletePrefix', 'Delete bus')} ${bus.busNumber}?` })}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                ),
-              },
-            ];
-            return <DataTable columns={columns} data={filteredBuses} searchPlaceholder={t('pages.admin.buses.searchPlaceholder', 'Search buses...')} hideFirstPrevious />;
-          })()
-        )}
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 

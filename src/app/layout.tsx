@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Cairo } from 'next/font/google';
 import './globals.css';
 
 import { AuthProvider } from '@/hooks/useAuth';
@@ -11,10 +11,16 @@ import I18nProvider from '@/components/providers/I18nProvider';
 import { cookies } from 'next/headers'
 
 const inter = Inter({ subsets: ['latin'] });
+const cairo = Cairo({ subsets: ['arabic'] });
 
 export const metadata: Metadata = {
   title: 'الريناد - نظام إدارة النقل الذكي',
   description: 'نظام شامل لإدارة النقل والحافلات المدرسية',
+  icons: {
+    icon: '/bus_two.png',
+    shortcut: '/bus_two.png',
+    apple: '/bus_two.png',
+  },
 };
 
 
@@ -25,7 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dir = lang === 'ar' ? 'rtl' : 'ltr'
   return (
     <html lang={lang} dir={dir}>
-      <body className={inter.className}>
+      <body className={lang === 'ar' ? cairo.className : inter.className}>
         <AuthProvider>
           <ToastProvider>
             <ConsoleSilencer />

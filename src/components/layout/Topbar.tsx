@@ -614,6 +614,7 @@ export const Topbar = () => {
                   fill
                   className="object-cover"
                   sizes="40px"
+                  unoptimized
                   onError={() => setAvatarSrc('/logo2.png')}
                 />
               </div>
@@ -639,6 +640,7 @@ export const Topbar = () => {
                           fill
                           className="object-cover"
                           sizes="48px"
+                          unoptimized
                           onError={() => setAvatarSrc('/logo2.png')}
                         />
                       </div>
