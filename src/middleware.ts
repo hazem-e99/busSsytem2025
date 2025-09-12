@@ -9,6 +9,7 @@ export function middleware(request: NextRequest) {
   const publicRoutes = [
     '/auth/login',
     '/auth/register',
+    '/register',
     '/auth/forgot-password',
     '/auth/reset-password',
     '/auth/new-password',
