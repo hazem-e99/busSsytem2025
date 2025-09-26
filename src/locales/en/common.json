@@ -592,7 +592,7 @@
           "descriptionHint": "Optional. Up to 500 characters.",
           "descriptionPh": "Short summary of the plan",
           "price": "Price",
-          "priceHint": "0.01 - 10,000. Use two decimals.",
+          "priceHint": "Minimum 0.01. Use two decimals.",
           "pricePh": "0.00",
           "durationDays": "Duration (days)",
           "durationHint": "1 - 365 days.",

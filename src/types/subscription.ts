@@ -13,7 +13,7 @@ export interface SubscriptionPlanViewModel {
 export interface CreateSubscriptionPlanDTO {
   name: string; // 3-100 chars, required
   description?: string | null; // 0-500 chars, optional
-  price: number; // 0.01 - 10000
+  price: number; // minimum 0.01
   maxNumberOfRides: number; // 1 - 1000
   durationInDays: number; // 1 - 365
   isActive: boolean; // required
@@ -22,7 +22,7 @@ export interface CreateSubscriptionPlanDTO {
 export interface UpdateSubscriptionPlanDTO {
   name?: string | null;
   description?: string | null;
-  price?: number | null; // 0.01 - 10000
+  price?: number | null; // minimum 0.01
   maxNumberOfRides?: number | null; // 1 - 1000
   durationInDays?: number | null; // 1 - 365
   isActive?: boolean | null;

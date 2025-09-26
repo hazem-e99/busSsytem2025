@@ -372,13 +372,12 @@ export default function PlansPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">{t('pages.admin.plans.form.price', 'Price')} *</label>
-                <p className="text-xs text-gray-500 mb-2">{t('pages.admin.plans.form.priceHint', '0.01 - 10,000. Use two decimals.')}</p>
+                <p className="text-xs text-gray-500 mb-2">{t('pages.admin.plans.form.priceHint', 'Minimum 0.01. Use two decimals.')}</p>
                 <Input 
                   type="number" 
                   value={form.price} 
                   onChange={e => setForm({ ...form, price: Number(e.target.value) })} 
                   min={0.01} 
-                  max={10000} 
                   step={0.01} 
                   required
                   placeholder={t('pages.admin.plans.form.pricePh', '0.00')}

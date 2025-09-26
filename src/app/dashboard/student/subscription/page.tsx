@@ -86,6 +86,10 @@ export default function StudentSubscriptionPage() {
   const [paymentReferenceCode, setPaymentReferenceCode] = useState('');
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [availablePlans, setAvailablePlans] = useState<Plan[]>([]);
+  // Distinguish between online channels: 'instapay' or 'vodafone'
+  const [onlineChannel, setOnlineChannel] = useState<'instapay' | 'vodafone'>('instapay');
+  // Distinguish between offline channels: 'offline' (cash/manual) or 'visa'
+  const [offlineChannel, setOfflineChannel] = useState<'offline' | 'visa'>('offline');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -203,6 +207,8 @@ export default function StudentSubscriptionPage() {
   const handleChoosePlan = (plan: Plan) => {
     setSelectedPlan(plan);
     setPaymentMethod(PaymentMethod.Online);
+    setOnlineChannel('instapay');
+    setOfflineChannel('offline');
     setPaymentReferenceCode('');
     setMethodModalOpen(true);
   };
@@ -236,6 +242,8 @@ export default function StudentSubscriptionPage() {
   const handleSelectUpgradePlan = (plan: Plan) => {
     setSelectedPlan(plan);
     setPaymentMethod(PaymentMethod.Online);
+    setOnlineChannel('instapay');
+    setOfflineChannel('offline');
     setPaymentReferenceCode('');
     setUpgradeModalOpen(false);
     setMethodModalOpen(true);
@@ -255,8 +263,8 @@ export default function StudentSubscriptionPage() {
       paymentReferenceCode: paymentReferenceCode ? '***' : 'none'
     });
     
-    // Validation for online payment
-    if (paymentMethod === PaymentMethod.Online && !paymentReferenceCode.trim()) {
+    // Validation for online payment (InstaPay only)
+    if (paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && !paymentReferenceCode.trim()) {
       showToast({
         type: 'error',
         title: t('pages.student.subscription.validationError', 'Validation Error'),
@@ -265,8 +273,8 @@ export default function StudentSubscriptionPage() {
       return;
     }
 
-    // Validation for reference code length
-    if (paymentMethod === PaymentMethod.Online && paymentReferenceCode.trim().length < 3) {
+    // Validation for reference code length (InstaPay only)
+    if (paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && paymentReferenceCode.trim().length < 3) {
       showToast({
         type: 'error',
         title: t('pages.student.subscription.validationError', 'Validation Error'),
@@ -282,7 +290,7 @@ export default function StudentSubscriptionPage() {
       const paymentData: CreatePaymentDTO = {
         subscriptionPlanId: selectedPlan.id,
         paymentMethod: paymentMethod,
-        paymentReferenceCode: paymentMethod === PaymentMethod.Online ? paymentReferenceCode.trim() : null
+        paymentReferenceCode: (paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay') ? paymentReferenceCode.trim() : null
       };
 
       console.log('📤 Sending payment data:', paymentData);
@@ -504,7 +512,7 @@ export default function StudentSubscriptionPage() {
                           {currentMethod === 'Online' 
                             ? t('pages.student.subscription.methodOnlineName','InstaPay') 
                             : currentMethod === 'Offline' 
-                              ? t('pages.student.subscription.methodOffline','Offline') 
+                              ? t('pages.student.subscription.methodOffline','Cash') 
                               : currentMethod || '—'}
                    </div>
               </div>
@@ -609,7 +617,7 @@ export default function StudentSubscriptionPage() {
                       {currentMethod === 'Online' 
                         ? t('pages.student.subscription.methodOnlineName','InstaPay') 
                         : currentMethod === 'Offline' 
-                          ? t('pages.student.subscription.methodOffline','Offline') 
+                          ? t('pages.student.subscription.methodOffline','Cash') 
                           : currentMethod || '—'}
                     </div>
                   </div>
@@ -719,11 +727,11 @@ export default function StudentSubscriptionPage() {
       </div>
 
       {/* Payment Method Modal */}
-  <Modal isOpen={methodModalOpen} onClose={() => setMethodModalOpen(false)} title={t('pages.student.subscription.paymentMethodTitle', 'Payment Method')} size="md">
-        <div className="space-y-4">
+  <Modal isOpen={methodModalOpen} onClose={() => setMethodModalOpen(false)} title={t('pages.student.subscription.paymentMethodTitle', 'Payment Method')} size="lg">
+        <div className="space-y-3">
           {/* Plan Summary - Compact */}
           {selectedPlan && (
-            <div className="bg-primary/5 p-4 rounded-lg border border-primary/20">
+            <div className="bg-primary/5 p-3 rounded-lg border border-primary/20">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-lg text-gray-900">{selectedPlan.name}</h3>
@@ -748,21 +756,21 @@ export default function StudentSubscriptionPage() {
           )}
 
           {/* Payment Methods - Side by Side */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <h4 className="font-semibold text-gray-900">{t('pages.student.subscription.choosePaymentMethod', 'Choose Payment Method')}</h4>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-4 gap-3">
               {/* Online Payment Option */}
               <button
-                className={`p-4 border-2 rounded-lg text-center transition-all ${
-                  paymentMethod === PaymentMethod.Online 
+                className={`p-3 border-2 rounded-lg text-center transition-all ${
+                  paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay'
                     ? 'border-primary bg-primary/5' 
                     : 'border-gray-200 hover:border-primary/40'
                 }`}
-                onClick={() => setPaymentMethod(PaymentMethod.Online)}
+                onClick={() => { setPaymentMethod(PaymentMethod.Online); setOnlineChannel('instapay'); }}
               >
                 <div className="space-y-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto ${
-                    paymentMethod === PaymentMethod.Online 
+                    paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay'
                       ? 'bg-primary text-white' 
                       : 'bg-gray-100 text-gray-600'
                   }`}>
@@ -773,11 +781,44 @@ export default function StudentSubscriptionPage() {
                     <div className="text-xs text-gray-600">{t('pages.student.subscription.methodOnline', 'Online')}</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 mx-auto ${
-                    paymentMethod === PaymentMethod.Online 
+                    paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay'
                       ? 'border-primary bg-primary' 
                       : 'border-gray-300'
                   }`}>
-                    {paymentMethod === PaymentMethod.Online && (
+                    {paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && (
+                      <div className="w-1.5 h-1.5 bg-white rounded-full m-0.5"></div>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              {/* Vodafone Cash (treated as Online) */}
+              <button
+                className={`p-3 border-2 rounded-lg text-center transition-all ${
+                  paymentMethod === PaymentMethod.Online && onlineChannel === 'vodafone'
+                    ? 'border-primary bg-primary/5'
+                    : 'border-gray-200 hover:border-primary/40'
+                }`}
+                onClick={() => { setPaymentMethod(PaymentMethod.Online); setOnlineChannel('vodafone'); }}
+              >
+                <div className="space-y-2">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto ${
+                    paymentMethod === PaymentMethod.Online && onlineChannel === 'vodafone'
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{lang === 'ar' ? 'فودافون كاش' : 'Vodafone Cash'}</div>
+                    <div className="text-xs text-gray-600">{t('pages.student.subscription.methodOnline', 'Online')}</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 mx-auto ${
+                    paymentMethod === PaymentMethod.Online && onlineChannel === 'vodafone'
+                      ? 'border-primary bg-primary'
+                      : 'border-gray-300'
+                  }`}>
+                    {paymentMethod === PaymentMethod.Online && onlineChannel === 'vodafone' && (
                       <div className="w-1.5 h-1.5 bg-white rounded-full m-0.5"></div>
                     )}
                   </div>
@@ -786,31 +827,64 @@ export default function StudentSubscriptionPage() {
 
               {/* Offline Payment Option */}
               <button
-                className={`p-4 border-2 rounded-lg text-center transition-all ${
-                  paymentMethod === PaymentMethod.Offline 
+                className={`p-3 border-2 rounded-lg text-center transition-all ${
+                  paymentMethod === PaymentMethod.Offline && offlineChannel === 'offline'
                     ? 'border-primary bg-primary/5' 
                     : 'border-gray-200 hover:border-primary/40'
                 }`}
-                onClick={() => setPaymentMethod(PaymentMethod.Offline)}
+                onClick={() => { setPaymentMethod(PaymentMethod.Offline); setOfflineChannel('offline'); }}
               >
                 <div className="space-y-2">
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto ${
-                    paymentMethod === PaymentMethod.Offline 
+                    paymentMethod === PaymentMethod.Offline && offlineChannel === 'offline'
                       ? 'bg-primary text-white' 
                       : 'bg-gray-100 text-gray-600'
                   }`}>
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900 text-sm">{t('pages.student.subscription.methodOffline', 'Offline')}</div>
+                    <div className="font-semibold text-gray-900 text-sm">{t('pages.student.subscription.methodOffline', 'Cash')}</div>
                     <div className="text-xs text-gray-600">{t('pages.student.subscription.methodManual', 'Manual')}</div>
                   </div>
                   <div className={`w-4 h-4 rounded-full border-2 mx-auto ${
-                    paymentMethod === PaymentMethod.Offline 
+                    paymentMethod === PaymentMethod.Offline && offlineChannel === 'offline'
                       ? 'border-primary bg-primary' 
                       : 'border-gray-300'
                   }`}>
-                    {paymentMethod === PaymentMethod.Offline && (
+                    {paymentMethod === PaymentMethod.Offline && offlineChannel === 'offline' && (
+                      <div className="w-1.5 h-1.5 bg-white rounded-full m-0.5"></div>
+                    )}
+                  </div>
+                </div>
+              </button>
+
+              {/* Visa (treated as Offline with office visit) */}
+              <button
+                className={`p-3 border-2 rounded-lg text-center transition-all ${
+                  paymentMethod === PaymentMethod.Offline && offlineChannel === 'visa'
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-gray-200 hover:border-primary/40'
+                }`}
+                onClick={() => { setPaymentMethod(PaymentMethod.Offline); setOfflineChannel('visa'); }}
+              >
+                <div className="space-y-2">
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center mx-auto ${
+                    paymentMethod === PaymentMethod.Offline && offlineChannel === 'visa'
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    <CreditCard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900 text-sm">{lang === 'ar' ? 'فيزا' : 'Visa'}</div>
+                    <div className="text-xs text-gray-600">{t('pages.student.subscription.methodManual', 'Manual')}</div>
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 mx-auto ${
+                    paymentMethod === PaymentMethod.Offline && offlineChannel === 'visa'
+                      ? 'border-primary bg-primary'
+                      : 'border-gray-300'
+                  }`}>
+                    {paymentMethod === PaymentMethod.Offline && offlineChannel === 'visa' && (
                       <div className="w-1.5 h-1.5 bg-white rounded-full m-0.5"></div>
                     )}
                   </div>
@@ -821,59 +895,82 @@ export default function StudentSubscriptionPage() {
 
           {/* Bank Account Information - Compact */}
           {paymentMethod === PaymentMethod.Online && (
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-blue-600">🏦</span>
-                <h5 className="font-semibold text-blue-900">{t('pages.student.subscription.bankInfo', 'Bank Transfer Info')}</h5>
+                <h5 className="font-semibold text-blue-900">
+                  {onlineChannel === 'vodafone'
+                    ? (lang === 'ar' ? 'معلومات فودافون كاش' : 'Vodafone Cash Info')
+                    : t('pages.student.subscription.bankInfo', 'Bank Transfer Info')}
+                </h5>
               </div>
               <div className="space-y-2">
                 <div className="bg-white p-3 rounded border border-blue-200 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">{t('pages.student.subscription.accountNumber', 'Account Number')}:</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">
-                        3640001000011832
-                      </span>
-                      <button
-                        onClick={() => navigator.clipboard.writeText('3640001000011832')}
-                        className="text-blue-600 hover:text-blue-800 text-sm"
-                        title={t('pages.student.subscription.copy', 'Copy')}
-                      >
-                        📋
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-700">{t('pages.student.subscription.accountName', 'Account Name')}:</span>
-                    <span className="font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">
-                      شركه الريناد للتوريدات والنقل
-                    </span>
-                  </div>
+                  {onlineChannel === 'vodafone' ? (
+                    <>
+                      <div className={`text-sm text-gray-700 ${lang === 'ar' ? 'text-right' : 'text-left'}`} dir={lang === 'ar' ? 'rtl' : 'ltr'}>
+                        {lang === 'ar' ? 'أرقام التحويل:' : 'Transfer numbers:'}
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">01030019746</span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText('01030019746')}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          title={t('pages.student.subscription.copy', 'Copy')}
+                        >
+                          📋
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">01050076357</span>
+                        <button
+                          onClick={() => navigator.clipboard.writeText('01050076357')}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                          title={t('pages.student.subscription.copy', 'Copy')}
+                        >
+                          📋
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">{t('pages.student.subscription.accountNumber', 'Account Number')}:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">
+                            3640001000011832
+                          </span>
+                          <button
+                            onClick={() => navigator.clipboard.writeText('3640001000011832')}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                            title={t('pages.student.subscription.copy', 'Copy')}
+                          >
+                            📋
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-700">{t('pages.student.subscription.accountName', 'Account Name')}:</span>
+                        <span className="font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded text-sm">
+                          شركه الريناد للتوريدات والنقل
+                        </span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="bg-amber-50 border border-amber-200 p-2 rounded text-xs text-amber-800">
                   <p className="font-medium">{t('pages.student.subscription.transfer', '⚠️ Transfer')} {formatCurrency(lang, selectedPlan?.price)}</p>
                 </div>
-
-                {/* InstaPay instructions (localized) */}
+                {/* Transfer instructions (InstaPay/Vodafone) */}
                 <div className="mt-3 bg-white p-3 rounded border border-blue-200 space-y-2">
                   <p
                     className={`text-sm text-gray-800 ${lang === 'ar' ? 'text-right' : 'text-left'}`}
                     dir={lang === 'ar' ? 'rtl' : 'ltr'}
                   >
-                    {lang === 'en'
-                      ? 'Please attach a screenshot of the transfer to one of the following numbers:'
-                      : 'برجاء ارفاق صوره من التحويل علي احد الارقام الاتيه:'}
+                    {lang === 'ar'
+                      ? 'برجاء إرفاق صورة من التحويل إلى أحد الأرقام التالية:'
+                      : 'Please attach a screenshot of the transfer to one of the following numbers:'}
                   </p>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded">01005015215</span>
-                    <button
-                      onClick={() => navigator.clipboard.writeText('01005015215')}
-                      className="text-blue-600 hover:text-blue-800"
-                      title={t('pages.student.subscription.copy', 'Copy')}
-                    >
-                      📋
-                    </button>
-                  </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-mono font-semibold text-blue-800 bg-blue-100 px-2 py-1 rounded">01030019746</span>
                     <button
@@ -884,13 +981,14 @@ export default function StudentSubscriptionPage() {
                       📋
                     </button>
                   </div>
+                  
                 </div>
               </div>
             </div>
           )}
 
-          {/* Payment Reference Code - Compact */}
-          {paymentMethod === PaymentMethod.Online && (
+          {/* Payment Reference Code - Compact (InstaPay only) */}
+          {paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
                 {t('pages.student.subscription.paymentRefLabel', 'Payment Reference Code')} <span className="text-red-500">*</span>
@@ -901,7 +999,7 @@ export default function StudentSubscriptionPage() {
                 onChange={(e) => setPaymentReferenceCode(e.target.value)}
                 placeholder={t('pages.student.subscription.paymentRefPlaceholder', 'Enter InstaPay reference code')}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                  paymentMethod === PaymentMethod.Online && !paymentReferenceCode.trim() 
+                  paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && !paymentReferenceCode.trim() 
                     ? 'border-red-300 focus:ring-red-500' 
                     : 'border-gray-300'
                 }`}
@@ -909,7 +1007,7 @@ export default function StudentSubscriptionPage() {
                 minLength={3}
                 required
               />
-              {paymentMethod === PaymentMethod.Online && !paymentReferenceCode.trim() && (
+              {paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && !paymentReferenceCode.trim() && (
                 <p className="text-xs text-red-500">
                   {t('pages.student.subscription.refRequired', 'Reference code is required for InstaPay transactions')}
                 </p>
@@ -919,14 +1017,16 @@ export default function StudentSubscriptionPage() {
 
           {/* Offline payment instructions */}
           {paymentMethod === PaymentMethod.Offline && (
-            <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+            <div className="bg-amber-50 p-3 rounded-lg border border-amber-200">
               <p
                 className={`text-sm text-amber-800 ${lang === 'ar' ? 'text-right' : 'text-left'}`}
                 dir={lang === 'ar' ? 'rtl' : 'ltr'}
               >
-                {lang === 'en'
-                  ? 'Please visit the office to pay and activate your account.'
-                  : 'برجاء الذهاب للمقر للدفع وتفعيل حسابك'}
+                {offlineChannel === 'visa'
+                  ? (lang === 'ar' ? 'برجاء الذهاب للمقر للدفع وتفعيل حسابك.' : 'Please visit the office to pay and activate your account.')
+                  : (lang === 'en'
+                    ? 'Please visit the office to pay and activate your account.'
+                    : 'برجاء الذهاب للمقر للدفع وتفعيل حسابك')}
               </p>
             </div>
           )}
@@ -941,7 +1041,7 @@ export default function StudentSubscriptionPage() {
               disabled={
                 submitting || 
                 !selectedPlan || 
-                (paymentMethod === PaymentMethod.Online && !paymentReferenceCode.trim())
+                (paymentMethod === PaymentMethod.Online && onlineChannel === 'instapay' && !paymentReferenceCode.trim())
               }
             >
               {submitting ? t('pages.student.subscription.processing', 'Processing...') : t('pages.student.subscription.confirmPayment', 'Confirm Payment')}
